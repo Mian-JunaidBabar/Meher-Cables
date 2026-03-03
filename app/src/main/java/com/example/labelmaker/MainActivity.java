@@ -9,19 +9,25 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.EditText;
+import android.widget.PopupMenu;
+import android.widget.SeekBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.navigation.NavigationView;
+import com.google.android.material.switchmaterial.SwitchMaterial;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -35,19 +41,35 @@ public class MainActivity extends AppCompatActivity {
     private static final float A4_WIDTH_POINTS = 595f;
     private static final float A4_HEIGHT_POINTS = 842f;
 
+    // Font size presets
+    private static final int[] FONT_SIZES = {6, 8, 10, 12, 16, 20, 24, 28};
+    private static final String[] FONT_SIZE_LABELS = {"XXS", "XS", "S", "M", "L", "XL", "XXL", "XXXL"};
+
     private DrawerLayout drawerLayout;
     private A4PreviewView a4PreviewView;
-    private EditText textInput, rowsInput, columnsInput, fontSizeInput;
-    private MaterialButton textColorButton, startColorButton, endColorButton, exportButton;
+    private EditText textInput, rowsInput, columnsInput;
+    private MaterialButton textColorButton, backgroundColorButton, exportButton, fontSizeDropdown;
+    private MaterialButton fontDecrease, fontIncrease;
+    private TextView fontSizeValue, borderWidthValue;
+    private SeekBar borderWidthSeekbar;
     private Toolbar toolbar;
 
     private int textColor = Color.BLACK;
-    private int startColor = Color.WHITE;
-    private int endColor = Color.LTGRAY;
+    private int backgroundColor = Color.WHITE;
+    private float fontSize = 12f;
+    private float borderWidth = 2f;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        // Load theme preference before setContentView
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        boolean isDarkMode = prefs.getBoolean("isDarkMode", false);
+        AppCompatDelegate.setDefaultNightMode(
+            isDarkMode ? AppCompatDelegate.MODE_NIGHT_YES : AppCompatDelegate.MODE_NIGHT_NO
+        );
+        
         setContentView(R.layout.activity_main);
 
         initializeViews();
@@ -65,11 +87,15 @@ public class MainActivity extends AppCompatActivity {
         textInput = findViewById(R.id.text_input);
         rowsInput = findViewById(R.id.rows_input);
         columnsInput = findViewById(R.id.columns_input);
-        fontSizeInput = findViewById(R.id.font_size_input);
         textColorButton = findViewById(R.id.text_color_button);
-        startColorButton = findViewById(R.id.start_color_button);
-        endColorButton = findViewById(R.id.end_color_button);
+        backgroundColorButton = findViewById(R.id.background_color_button);
         exportButton = findViewById(R.id.export_button);
+        fontSizeDropdown = findViewById(R.id.font_size_dropdown);
+        fontDecrease = findViewById(R.id.font_decrease);
+        fontIncrease = findViewById(R.id.font_increase);
+        fontSizeValue = findViewById(R.id.font_size_value);
+        borderWidthSeekbar = findViewById(R.id.border_width_seekbar);
+        borderWidthValue = findViewById(R.id.border_width_value);
     }
 
     private void setupToolbar() {
@@ -102,12 +128,40 @@ public class MainActivity extends AppCompatActivity {
         textInput.addTextChangedListener(textWatcher);
         rowsInput.addTextChangedListener(textWatcher);
         columnsInput.addTextChangedListener(textWatcher);
-        fontSizeInput.addTextChangedListener(textWatcher);
 
         // Color selection buttons
         textColorButton.setOnClickListener(v -> selectTextColor());
-        startColorButton.setOnClickListener(v -> selectStartColor());
-        endColorButton.setOnClickListener(v -> selectEndColor());
+        backgroundColorButton.setOnClickListener(v -> selectBackgroundColor());
+        
+        // Font size controls
+        fontSizeDropdown.setOnClickListener(v -> showFontSizeMenu());
+        fontDecrease.setOnClickListener(v -> {
+            fontSize = Math.max(4f, fontSize - 1);
+            updateFontSizeDisplay();
+            updatePreview();
+        });
+        fontIncrease.setOnClickListener(v -> {
+            fontSize = Math.min(72f, fontSize + 1);
+            updateFontSizeDisplay();
+            updatePreview();
+        });
+        
+        // Border width control
+        borderWidthSeekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                // Map 0-95 to 0.5-10.0
+                borderWidth = 0.5f + (progress / 95f) * 9.5f;
+                borderWidthValue.setText(String.format("%.1f", borderWidth));
+                a4PreviewView.setBorderWidth(borderWidth);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {}
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
         
         // Export button
         exportButton.setOnClickListener(v -> exportToPdf());
@@ -122,6 +176,27 @@ public class MainActivity extends AppCompatActivity {
             drawerLayout.closeDrawer(GravityCompat.START);
             return true;
         });
+        
+        // Setup theme toggle switch
+        MenuItem themeItem = navigationView.getMenu().findItem(R.id.nav_theme_toggle);
+        View actionView = themeItem.getActionView();
+        if (actionView != null) {
+            SwitchMaterial themeSwitch = actionView.findViewById(R.id.theme_switch);
+            if (themeSwitch != null) {
+                SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+                themeSwitch.setChecked(prefs.getBoolean("isDarkMode", false));
+                
+                themeSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                    SharedPreferences.Editor editor = prefs.edit();
+                    editor.putBoolean("isDarkMode", isChecked);
+                    editor.apply();
+                    
+                    AppCompatDelegate.setDefaultNightMode(
+                        isChecked ? AppCompatDelegate.MODE_NIGHT_YES : AppCompatDelegate.MODE_NIGHT_NO
+                    );
+                });
+            }
+        }
     }
 
     private void setupBackPressHandler() {
@@ -148,20 +223,32 @@ public class MainActivity extends AppCompatActivity {
         }).show();
     }
 
-    private void selectStartColor() {
-        new ColorPickerDialog(this, startColor, color -> {
-            startColor = color;
-            updateButtonColor(startColorButton, color);
+    private void selectBackgroundColor() {
+        new ColorPickerDialog(this, backgroundColor, color -> {
+            backgroundColor = color;
+            updateButtonColor(backgroundColorButton, color);
             updatePreview();
         }).show();
     }
-
-    private void selectEndColor() {
-        new ColorPickerDialog(this, endColor, color -> {
-            endColor = color;
-            updateButtonColor(endColorButton, color);
+    
+    private void showFontSizeMenu() {
+        PopupMenu popup = new PopupMenu(this, fontSizeDropdown);
+        for (int i = 0; i < FONT_SIZE_LABELS.length; i++) {
+            popup.getMenu().add(0, i, i, FONT_SIZE_LABELS[i] + " (" + FONT_SIZES[i] + "pt)");
+        }
+        popup.setOnMenuItemClickListener(item -> {
+            int index = item.getItemId();
+            fontSize = FONT_SIZES[index];
+            fontSizeDropdown.setText(FONT_SIZE_LABELS[index]);
+            updateFontSizeDisplay();
             updatePreview();
-        }).show();
+            return true;
+        });
+        popup.show();
+    }
+    
+    private void updateFontSizeDisplay() {
+        fontSizeValue.setText(String.format("%.0f", fontSize));
     }
 
     private void updateButtonColor(MaterialButton button, int color) {
@@ -173,14 +260,12 @@ public class MainActivity extends AppCompatActivity {
         String text = textInput.getText().toString();
         int rows = parseIntOrDefault(rowsInput.getText().toString(), 10);
         int cols = parseIntOrDefault(columnsInput.getText().toString(), 3);
-        float fontSize = parseFloatOrDefault(fontSizeInput.getText().toString(), 12f);
 
         // Validate and constrain values
         rows = Math.max(1, Math.min(50, rows));
         cols = Math.max(1, Math.min(20, cols));
-        fontSize = Math.max(4f, Math.min(72f, fontSize));
 
-        a4PreviewView.setLabelData(text, rows, cols, fontSize, textColor, startColor, endColor);
+        a4PreviewView.setLabelData(text, rows, cols, fontSize, textColor, backgroundColor);
     }
 
     private int parseIntOrDefault(String value, int defaultValue) {
@@ -191,23 +276,16 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private float parseFloatOrDefault(String value, float defaultValue) {
-        try {
-            return Float.parseFloat(value);
-        } catch (NumberFormatException e) {
-            return defaultValue;
-        }
-    }
 
     private void saveConfiguration() {
         SharedPreferences.Editor editor = getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit();
         editor.putString("text", textInput.getText().toString());
         editor.putInt("rows", parseIntOrDefault(rowsInput.getText().toString(), 10));
         editor.putInt("cols", parseIntOrDefault(columnsInput.getText().toString(), 3));
-        editor.putFloat("fontSize", parseFloatOrDefault(fontSizeInput.getText().toString(), 12f));
+        editor.putFloat("fontSize", fontSize);
         editor.putInt("textColor", textColor);
-        editor.putInt("startColor", startColor);
-        editor.putInt("endColor", endColor);
+        editor.putInt("backgroundColor", backgroundColor);
+        editor.putFloat("borderWidth", borderWidth);
         editor.apply();
     }
 
@@ -217,21 +295,26 @@ public class MainActivity extends AppCompatActivity {
         String text = prefs.getString("text", "");
         int rows = prefs.getInt("rows", 10);
         int cols = prefs.getInt("cols", 3);
-        float fontSize = prefs.getFloat("fontSize", 12f);
+        fontSize = prefs.getFloat("fontSize", 12f);
+        borderWidth = prefs.getFloat("borderWidth", 2f);
         
         textInput.setText(text);
         rowsInput.setText(String.valueOf(rows));
         columnsInput.setText(String.valueOf(cols));
-        fontSizeInput.setText(String.valueOf((int) fontSize));
         
         textColor = prefs.getInt("textColor", Color.BLACK);
-        startColor = prefs.getInt("startColor", Color.WHITE);
-        endColor = prefs.getInt("endColor", Color.LTGRAY);
+        backgroundColor = prefs.getInt("backgroundColor", Color.WHITE);
 
-        // Update button colors
+        // Update UI
         updateButtonColor(textColorButton, textColor);
-        updateButtonColor(startColorButton, startColor);
-        updateButtonColor(endColorButton, endColor);
+        updateButtonColor(backgroundColorButton, backgroundColor);
+        updateFontSizeDisplay();
+        
+        // Update border width seekbar
+        int progress = (int)(((borderWidth - 0.5f) / 9.5f) * 95);
+        borderWidthSeekbar.setProgress(progress);
+        borderWidthValue.setText(String.format("%.1f", borderWidth));
+        a4PreviewView.setBorderWidth(borderWidth);
     }
 
     private void exportToPdf() {

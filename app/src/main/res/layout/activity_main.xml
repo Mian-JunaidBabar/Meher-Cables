@@ -27,18 +27,16 @@
 
         </com.google.android.material.appbar.AppBarLayout>
 
-        <LinearLayout
+        <androidx.core.widget.NestedScrollView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:orientation="vertical"
+            android:fillViewport="true"
             app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-            <ScrollView
-                android:id="@+id/control_panel"
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:fillViewport="true">
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -135,21 +133,76 @@
                                         android:text="3" />
                                 </com.google.android.material.textfield.TextInputLayout>
 
-                                <com.google.android.material.textfield.TextInputLayout
+                            </LinearLayout>
+
+                        </LinearLayout>
+
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
+                        app:cardElevation="2dp"
+                        app:cardCornerRadius="12dp"
+                        app:contentPadding="16dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Font Size"
+                                android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+                                android:layout_marginBottom="8dp" />
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical">
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/font_size_dropdown"
                                     android:layout_width="0dp"
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1"
-                                    android:layout_marginStart="12dp"
-                                    android:hint="Font Size"
-                                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
+                                    android:text="Medium"
+                                    app:icon="@drawable/ic_arrow_down"
+                                    app:iconGravity="end"
+                                    style="@style/Widget.Material3.Button.OutlinedButton" />
 
-                                    <com.google.android.material.textfield.TextInputEditText
-                                        android:id="@+id/font_size_input"
-                                        android:layout_width="match_parent"
-                                        android:layout_height="wrap_content"
-                                        android:inputType="number"
-                                        android:text="12" />
-                                </com.google.android.material.textfield.TextInputLayout>
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/font_decrease"
+                                    android:layout_width="48dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="8dp"
+                                    android:text="-"
+                                    android:textSize="20sp"
+                                    app:iconPadding="0dp"
+                                    style="@style/Widget.Material3.Button.TonalButton" />
+
+                                <TextView
+                                    android:id="@+id/font_size_value"
+                                    android:layout_width="48dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="8dp"
+                                    android:text="12"
+                                    android:textAlignment="center"
+                                    android:textAppearance="@style/TextAppearance.Material3.BodyLarge" />
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/font_increase"
+                                    android:layout_width="48dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="8dp"
+                                    android:text="+"
+                                    android:textSize="20sp"
+                                    app:iconPadding="0dp"
+                                    style="@style/Widget.Material3.Button.TonalButton" />
 
                             </LinearLayout>
 
@@ -173,7 +226,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Text Color"
+                                android:text="Colors"
                                 android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
                                 android:layout_marginBottom="8dp" />
 
@@ -181,7 +234,16 @@
                                 android:id="@+id/text_color_button"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:text="Select Text Color"
+                                android:layout_marginBottom="8dp"
+                                android:text="Text Color"
+                                app:icon="@drawable/ic_palette"
+                                style="@style/Widget.Material3.Button.TonalButton" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/background_color_button"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="Background Color"
                                 app:icon="@drawable/ic_palette"
                                 style="@style/Widget.Material3.Button.TonalButton" />
 
@@ -205,33 +267,39 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Gradient Editor"
+                                android:text="Border Settings"
                                 android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
                                 android:layout_marginBottom="8dp" />
 
                             <LinearLayout
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:orientation="horizontal">
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical">
 
-                                <com.google.android.material.button.MaterialButton
-                                    android:id="@+id/start_color_button"
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Border Width:"
+                                    android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                                    android:layout_marginEnd="8dp" />
+
+                                <SeekBar
+                                    android:id="@+id/border_width_seekbar"
                                     android:layout_width="0dp"
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1"
-                                    android:text="Start Color"
-                                    app:icon="@drawable/ic_gradient"
-                                    style="@style/Widget.Material3.Button.OutlinedButton" />
+                                    android:max="95"
+                                    android:progress="15" />
 
-                                <com.google.android.material.button.MaterialButton
-                                    android:id="@+id/end_color_button"
-                                    android:layout_width="0dp"
+                                <TextView
+                                    android:id="@+id/border_width_value"
+                                    android:layout_width="40dp"
                                     android:layout_height="wrap_content"
-                                    android:layout_weight="1"
-                                    android:layout_marginStart="12dp"
-                                    android:text="End Color"
-                                    app:icon="@drawable/ic_gradient"
-                                    style="@style/Widget.Material3.Button.OutlinedButton" />
+                                    android:layout_marginStart="8dp"
+                                    android:text="2"
+                                    android:textAlignment="center"
+                                    android:textAppearance="@style/TextAppearance.Material3.BodyMedium" />
 
                             </LinearLayout>
 
@@ -251,25 +319,25 @@
                         style="@style/Widget.Material3.Button.Icon" />
 
                 </LinearLayout>
-            </ScrollView>
 
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:layout_margin="8dp"
-                app:cardElevation="4dp"
-                app:cardCornerRadius="8dp">
-
-                <com.example.labelmaker.A4PreviewView
-                    android:id="@+id/a4_preview"
+                <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:background="@color/white" />
+                    android:layout_height="600dp"
+                    android:layout_margin="8dp"
+                    app:cardElevation="4dp"
+                    app:cardCornerRadius="8dp">
 
-            </com.google.android.material.card.MaterialCardView>
+                    <com.example.labelmaker.A4PreviewView
+                        android:id="@+id/a4_preview"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="?attr/colorSurface" />
 
-        </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
+
+        </androidx.core.widget.NestedScrollView>
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 

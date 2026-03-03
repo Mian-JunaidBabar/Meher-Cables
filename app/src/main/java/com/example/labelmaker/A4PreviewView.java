@@ -9,6 +9,8 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Shader;
 import android.util.AttributeSet;
+import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
 import android.view.View;
 
 import androidx.annotation.Nullable;
@@ -25,33 +27,40 @@ public class A4PreviewView extends View {
     private int cols = 3;
     private float fontSize = 12f;
     private int textColor = Color.BLACK;
-    private int startColor = Color.WHITE;
-    private int endColor = Color.LTGRAY;
+    private int labelBackgroundColor = Color.WHITE;
+    private float borderWidth = 2f;
 
     private Paint gridPaint;
     private Paint textPaint;
     private Paint backgroundPaint;
+    private Paint labelBgPaint;
     private Rect textBounds;
-    private boolean useGradient = false;
+    
+    // Zoom functionality
+    private float scaleFactor = 1.0f;
+    private float minScale = 0.5f;
+    private float maxScale = 5.0f;
+    
+    private ScaleGestureDetector scaleDetector;
 
     public A4PreviewView(Context context) {
         super(context);
-        init();
+        init(context);
     }
 
     public A4PreviewView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
-        init();
+        init(context);
     }
 
     public A4PreviewView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        init();
+        init(context);
     }
 
-    private void init() {
+    private void init(Context context) {
         gridPaint = new Paint();
-        gridPaint.setColor(Color.rgb(200, 200, 200));
+        gridPaint.setColor(Color.rgb(100, 100, 100));
         gridPaint.setStrokeWidth(2f);
         gridPaint.setStyle(Paint.Style.STROKE);
         gridPaint.setAntiAlias(true);
@@ -63,24 +72,57 @@ public class A4PreviewView extends View {
         backgroundPaint = new Paint();
         backgroundPaint.setColor(Color.WHITE);
         backgroundPaint.setStyle(Paint.Style.FILL);
+        
+        labelBgPaint = new Paint();
+        labelBgPaint.setStyle(Paint.Style.FILL);
+        labelBgPaint.setAntiAlias(true);
 
         textBounds = new Rect();
+        
+        
+        // Setup scale gesture detector for pinch-to-zoom
+        scaleDetector = new ScaleGestureDetector(context, new ScaleGestureDetector.SimpleOnScaleGestureListener() {
+            @Override
+            public boolean onScale(ScaleGestureDetector detector) {
+                scaleFactor *= detector.getScaleFactor();
+                scaleFactor = Math.max(minScale, Math.min(scaleFactor, maxScale));
+                invalidate();
+                return true;
+            }
+        });
+    }
+    
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        scaleDetector.onTouchEvent(event);
+        return true;
     }
 
     public void setLabelData(String text, int rows, int cols, float fontSize, 
-                            int textColor, int startColor, int endColor) {
+                            int textColor, int backgroundColor) {
         this.labelText = text != null ? text : "";
         this.rows = Math.max(1, rows);
         this.cols = Math.max(1, cols);
         this.fontSize = Math.max(4f, fontSize);
         this.textColor = textColor;
-        this.startColor = startColor;
-        this.endColor = endColor;
-        
-        // Check if gradient is enabled (colors are different)
-        this.useGradient = (startColor != endColor);
+        this.labelBackgroundColor = backgroundColor;
         
         invalidate();
+    }
+    
+    public void setBorderWidth(float width) {
+        this.borderWidth = Math.max(0.5f, Math.min(10f, width));
+        gridPaint.setStrokeWidth(borderWidth);
+        invalidate();
+    }
+    
+    public void setScale(float scale) {
+        this.scaleFactor = Math.max(minScale, Math.min(maxScale, scale));
+        invalidate();
+    }
+    
+    public float getScale() {
+        return scaleFactor;
     }
 
     @Override
@@ -103,9 +145,14 @@ public class A4PreviewView extends View {
         if (labelText.isEmpty() || rows <= 0 || cols <= 0) {
             return;
         }
+        
+        canvas.save();
+        canvas.scale(scaleFactor, scaleFactor);
 
-        drawGrid(canvas, width, height);
-        drawLabels(canvas, width, height);
+        drawGrid(canvas, (int)(width / scaleFactor), (int)(height / scaleFactor));
+        drawLabels(canvas, (int)(width / scaleFactor), (int)(height / scaleFactor));
+        
+        canvas.restore();
     }
 
     private void drawGrid(Canvas canvas, int width, int height) {
@@ -132,26 +179,26 @@ public class A4PreviewView extends View {
         // Scale font size based on preview size vs actual A4 size
         float scaledFontSize = fontSize * (width / A4_WIDTH_POINTS);
         textPaint.setTextSize(scaledFontSize);
-
-        // Create gradient shader if enabled
-        if (useGradient) {
-            Shader shader = new LinearGradient(
-                0, 0, 0, scaledFontSize,
-                startColor, endColor, Shader.TileMode.CLAMP
-            );
-            textPaint.setShader(shader);
-        } else {
-            textPaint.setShader(null);
-            textPaint.setColor(textColor);
-        }
+        textPaint.setColor(textColor);
+        textPaint.setShader(null);
+        
+        labelBgPaint.setColor(labelBackgroundColor);
 
         // Measure text bounds for centering
         textPaint.getTextBounds(labelText, 0, labelText.length(), textBounds);
 
         for (int row = 0; row < rows; row++) {
             for (int col = 0; col < cols; col++) {
-                float centerX = col * cellWidth + cellWidth / 2f;
-                float centerY = row * cellHeight + cellHeight / 2f;
+                float cellLeft = col * cellWidth;
+                float cellTop = row * cellHeight;
+                
+                // Draw label background
+                canvas.drawRect(cellLeft, cellTop, 
+                              cellLeft + cellWidth, cellTop + cellHeight, 
+                              labelBgPaint);
+                
+                float centerX = cellLeft + cellWidth / 2f;
+                float centerY = cellTop + cellHeight / 2f;
 
                 // Center text vertically
                 float textY = centerY - textBounds.exactCenterY();
@@ -186,7 +233,7 @@ public class A4PreviewView extends View {
         // Draw grid
         Paint pdfGridPaint = new Paint();
         pdfGridPaint.setColor(Color.rgb(100, 100, 100));
-        pdfGridPaint.setStrokeWidth(1f);
+        pdfGridPaint.setStrokeWidth(borderWidth);
         pdfGridPaint.setStyle(Paint.Style.STROKE);
         pdfGridPaint.setAntiAlias(true);
 
@@ -200,30 +247,34 @@ public class A4PreviewView extends View {
             canvas.drawLine(0, y, width, y, pdfGridPaint);
         }
 
-        // Draw text
+        // Draw label backgrounds and text
+        Paint pdfLabelBgPaint = new Paint();
+        pdfLabelBgPaint.setColor(labelBackgroundColor);
+        pdfLabelBgPaint.setStyle(Paint.Style.FILL);
+        pdfLabelBgPaint.setAntiAlias(true);
+        
         Paint pdfTextPaint = new Paint();
         pdfTextPaint.setAntiAlias(true);
         pdfTextPaint.setTextAlign(Paint.Align.CENTER);
         pdfTextPaint.setTextSize(fontSize);
-
-        if (useGradient) {
-            Shader shader = new LinearGradient(
-                0, 0, 0, fontSize,
-                startColor, endColor, Shader.TileMode.CLAMP
-            );
-            pdfTextPaint.setShader(shader);
-        } else {
-            pdfTextPaint.setShader(null);
-            pdfTextPaint.setColor(textColor);
-        }
+        pdfTextPaint.setColor(textColor);
+        pdfTextPaint.setShader(null);
 
         Rect bounds = new Rect();
         pdfTextPaint.getTextBounds(labelText, 0, labelText.length(), bounds);
 
         for (int row = 0; row < rows; row++) {
             for (int col = 0; col < cols; col++) {
-                float centerX = col * cellWidth + cellWidth / 2f;
-                float centerY = row * cellHeight + cellHeight / 2f;
+                float cellLeft = col * cellWidth;
+                float cellTop = row * cellHeight;
+                
+                // Draw label background
+                canvas.drawRect(cellLeft, cellTop,
+                              cellLeft + cellWidth, cellTop + cellHeight,
+                              pdfLabelBgPaint);
+                
+                float centerX = cellLeft + cellWidth / 2f;
+                float centerY = cellTop + cellHeight / 2f;
                 float textY = centerY - bounds.exactCenterY();
 
                 canvas.drawText(labelText, centerX, textY, pdfTextPaint);
