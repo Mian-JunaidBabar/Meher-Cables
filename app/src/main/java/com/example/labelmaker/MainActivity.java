@@ -169,9 +169,13 @@ public class MainActivity extends AppCompatActivity {
         // Navigation drawer
         NavigationView navigationView = findViewById(R.id.navigation_view);
         navigationView.setNavigationItemSelectedListener(item -> {
-            if (item.getItemId() == R.id.nav_save_labels) {
+            int itemId = item.getItemId();
+            if (itemId == R.id.nav_save_labels) {
                 saveConfiguration();
                 Toast.makeText(this, "Configuration saved successfully!", Toast.LENGTH_SHORT).show();
+            } else if (itemId == R.id.nav_rate_list) {
+                Intent intent = new Intent(this, RateListActivity.class);
+                startActivity(intent);
             }
             drawerLayout.closeDrawer(GravityCompat.START);
             return true;

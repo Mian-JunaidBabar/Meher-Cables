@@ -7,6 +7,10 @@
             android:icon="@drawable/ic_save"
             android:title="Save Labels" />
         <item
+            android:id="@+id/nav_rate_list"
+            android:icon="@drawable/ic_rate_list"
+            android:title="Rate List Generator" />
+        <item
             android:id="@+id/nav_theme_toggle"
             android:icon="@drawable/ic_theme"
             android:title="Dark Theme"
