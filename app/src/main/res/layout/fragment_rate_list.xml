@@ -2,42 +2,31 @@
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
-
-    <com.google.android.material.appbar.AppBarLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            app:title="Rate List Generator"
-            app:titleTextColor="?attr/colorOnPrimary"
-            app:navigationIcon="@drawable/ic_back" />
-
-    </com.google.android.material.appbar.AppBarLayout>
+    android:layout_height="match_parent"
+    android:background="?android:attr/colorBackground">
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:fillViewport="true"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+        android:fillViewport="true">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:padding="16dp"
+            android:gravity="center_horizontal">
 
-            <!-- Column Headers Configuration -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
                 app:cardElevation="2dp"
-                app:cardCornerRadius="12dp"
-                app:contentPadding="16dp">
+                app:cardBackgroundColor="?attr/colorSurface"
+                app:strokeWidth="1dp"
+                app:strokeColor="?attr/colorOutline"
+                app:cardCornerRadius="16dp"
+                app:contentPadding="20dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -48,14 +37,19 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Column Headers"
-                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                        android:layout_marginBottom="12dp" />
+                        android:drawablePadding="8dp"
+                        app:drawableStartCompat="@drawable/ic_settings"
+                        app:drawableTint="?attr/colorPrimary"
+                        android:textAppearance="?attr/textAppearanceTitleMedium"
+                        android:textColor="?attr/colorPrimary"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="16dp" />
 
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:hint="Product Name Header"
-                        android:layout_marginBottom="8dp"
+                        android:layout_marginBottom="12dp"
                         style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
 
                         <com.google.android.material.textfield.TextInputEditText
@@ -109,107 +103,25 @@
 
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Add New Item Section -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:cardElevation="2dp"
-                app:cardCornerRadius="12dp"
-                app:contentPadding="16dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Add New Product"
-                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                        android:layout_marginBottom="12dp" />
-
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="Product Name"
-                        android:layout_marginBottom="8dp"
-                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
-
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/input_product_name"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:inputType="text" />
-                    </com.google.android.material.textfield.TextInputLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:layout_marginBottom="12dp">
-
-                        <com.google.android.material.textfield.TextInputLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:hint="Old Rate"
-                            android:layout_marginEnd="8dp"
-                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
-
-                            <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/input_old_rate"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:inputType="numberDecimal" />
-                        </com.google.android.material.textfield.TextInputLayout>
-
-                        <com.google.android.material.textfield.TextInputLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:hint="New Rate"
-                            android:layout_marginStart="8dp"
-                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
-
-                            <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/input_new_rate"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:inputType="numberDecimal" />
-                        </com.google.android.material.textfield.TextInputLayout>
-
-                    </LinearLayout>
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_add_item"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Add to List"
-                        app:icon="@drawable/ic_add"
-                        style="@style/Widget.Material3.Button.TonalButton" />
-
-                </LinearLayout>
-
-            </com.google.android.material.card.MaterialCardView>
-
             <!-- Rate List Preview -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/preview_card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:cardElevation="4dp"
-                app:cardCornerRadius="12dp">
+                android:layout_marginBottom="80dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="?attr/colorSurface"
+                app:strokeWidth="1dp"
+                app:strokeColor="?attr/colorOutline"
+                app:cardCornerRadius="16dp">
 
                 <LinearLayout
                     android:id="@+id/rate_list_container"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:background="?attr/colorSurface"
-                    android:padding="16dp">
+                    android:background="@color/white"
+                    android:paddingTop="16dp">
 
                     <!-- Header Row -->
                     <LinearLayout
@@ -218,7 +130,7 @@
                         android:orientation="horizontal"
                         android:paddingVertical="12dp"
                         android:paddingHorizontal="16dp"
-                        android:background="?attr/colorPrimaryContainer">
+                        android:background="#f5f8f8">
 
                         <TextView
                             android:id="@+id/header_product_display"
@@ -227,7 +139,7 @@
                             android:layout_weight="2"
                             android:text="Product Name"
                             android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
-                            android:textColor="?attr/colorOnPrimaryContainer"
+                            android:textColor="#006666"
                             android:textStyle="bold"
                             android:paddingEnd="8dp" />
 
@@ -238,7 +150,7 @@
                             android:layout_weight="1"
                             android:text="Old Rate"
                             android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
-                            android:textColor="?attr/colorOnPrimaryContainer"
+                            android:textColor="#006666"
                             android:textStyle="bold"
                             android:gravity="end"
                             android:paddingHorizontal="8dp" />
@@ -250,7 +162,7 @@
                             android:layout_weight="1"
                             android:text="New Rate"
                             android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
-                            android:textColor="?attr/colorOnPrimaryContainer"
+                            android:textColor="#006666"
                             android:textStyle="bold"
                             android:gravity="end"
                             android:paddingStart="8dp" />
@@ -259,8 +171,8 @@
 
                     <View
                         android:layout_width="match_parent"
-                        android:layout_height="2dp"
-                        android:background="?attr/colorOutline" />
+                        android:layout_height="1dp"
+                        android:background="#006666" />
 
                     <!-- RecyclerView for Rate List Items -->
                     <androidx.recyclerview.widget.RecyclerView
@@ -274,9 +186,9 @@
                         android:id="@+id/empty_message"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="No items added yet. Add products above to see them here."
+                        android:text="No items added yet. Tap the + button to add products."
                         android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:textColor="#666666"
                         android:gravity="center"
                         android:padding="32dp"
                         android:visibility="visible" />
@@ -294,21 +206,23 @@
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_export_pdf"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="56dp"
                     android:layout_weight="1"
                     android:layout_marginEnd="8dp"
                     android:text="Download PDF"
                     app:icon="@drawable/ic_pdf"
-                    style="@style/Widget.Material3.Button.Icon" />
+                    app:cornerRadius="12dp"
+                    style="@style/Widget.Material3.Button" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_export_png"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="56dp"
                     android:layout_weight="1"
                     android:layout_marginStart="8dp"
                     android:text="Download PNG"
                     app:icon="@drawable/ic_image"
+                    app:cornerRadius="12dp"
                     style="@style/Widget.Material3.Button.OutlinedButton" />
 
             </LinearLayout>
@@ -316,5 +230,18 @@
         </LinearLayout>
 
     </androidx.core.widget.NestedScrollView>
+    
+    <!-- Floating Action Button for Adding Items -->
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/fab_add_item"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        app:icon="@drawable/ic_add"
+        android:text="Add Item"
+        android:textColor="?attr/colorOnPrimary"
+        app:iconTint="?attr/colorOnPrimary"
+        android:backgroundTint="?attr/colorPrimary" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -98,6 +98,10 @@ public class A4PreviewView extends View {
         return true;
     }
 
+    private boolean isGradient = false;
+    private int gradientStartColor = Color.WHITE;
+    private int gradientEndColor = Color.WHITE;
+
     public void setLabelData(String text, int rows, int cols, float fontSize, 
                             int textColor, int backgroundColor) {
         this.labelText = text != null ? text : "";
@@ -106,6 +110,22 @@ public class A4PreviewView extends View {
         this.fontSize = Math.max(4f, fontSize);
         this.textColor = textColor;
         this.labelBackgroundColor = backgroundColor;
+        this.isGradient = false; // Default to solid color when this method is called
+        
+        invalidate();
+    }
+    
+    // New overloaded method for gradients
+    public void setLabelData(String text, int rows, int cols, float fontSize, 
+                            int textColor, int gradientStart, int gradientEnd) {
+        this.labelText = text != null ? text : "";
+        this.rows = Math.max(1, rows);
+        this.cols = Math.max(1, cols);
+        this.fontSize = Math.max(4f, fontSize);
+        this.textColor = textColor;
+        this.gradientStartColor = gradientStart;
+        this.gradientEndColor = gradientEnd;
+        this.isGradient = true;
         
         invalidate();
     }
@@ -149,30 +169,12 @@ public class A4PreviewView extends View {
         canvas.save();
         canvas.scale(scaleFactor, scaleFactor);
 
-        drawGrid(canvas, (int)(width / scaleFactor), (int)(height / scaleFactor));
-        drawLabels(canvas, (int)(width / scaleFactor), (int)(height / scaleFactor));
+        drawLabelsAndGrid(canvas, (int)(width / scaleFactor), (int)(height / scaleFactor));
         
         canvas.restore();
     }
 
-    private void drawGrid(Canvas canvas, int width, int height) {
-        float cellWidth = width / (float) cols;
-        float cellHeight = height / (float) rows;
-
-        // Draw vertical lines
-        for (int i = 0; i <= cols; i++) {
-            float x = i * cellWidth;
-            canvas.drawLine(x, 0, x, height, gridPaint);
-        }
-
-        // Draw horizontal lines
-        for (int i = 0; i <= rows; i++) {
-            float y = i * cellHeight;
-            canvas.drawLine(0, y, width, y, gridPaint);
-        }
-    }
-
-    private void drawLabels(Canvas canvas, int width, int height) {
+    private void drawLabelsAndGrid(Canvas canvas, int width, int height) {
         float cellWidth = width / (float) cols;
         float cellHeight = height / (float) rows;
 
@@ -182,8 +184,6 @@ public class A4PreviewView extends View {
         textPaint.setColor(textColor);
         textPaint.setShader(null);
         
-        labelBgPaint.setColor(labelBackgroundColor);
-
         // Measure text bounds for centering
         textPaint.getTextBounds(labelText, 0, labelText.length(), textBounds);
 
@@ -191,20 +191,44 @@ public class A4PreviewView extends View {
             for (int col = 0; col < cols; col++) {
                 float cellLeft = col * cellWidth;
                 float cellTop = row * cellHeight;
+                float cellRight = cellLeft + cellWidth;
+                float cellBottom = cellTop + cellHeight;
+                
+                // Configure label background paint based on solid vs gradient
+                if (isGradient) {
+                    // Create a linear gradient from top-left to bottom-right of the cell
+                    LinearGradient gradient = new LinearGradient(
+                        cellLeft, cellTop, cellRight, cellBottom,
+                        gradientStartColor, gradientEndColor,
+                        Shader.TileMode.CLAMP
+                    );
+                    labelBgPaint.setShader(gradient);
+                } else {
+                    labelBgPaint.setShader(null);
+                    labelBgPaint.setColor(labelBackgroundColor);
+                }
                 
                 // Draw label background
-                canvas.drawRect(cellLeft, cellTop, 
-                              cellLeft + cellWidth, cellTop + cellHeight, 
-                              labelBgPaint);
+                canvas.drawRect(cellLeft, cellTop, cellRight, cellBottom, labelBgPaint);
                 
+                // Center text vertically
                 float centerX = cellLeft + cellWidth / 2f;
                 float centerY = cellTop + cellHeight / 2f;
-
-                // Center text vertically
                 float textY = centerY - textBounds.exactCenterY();
 
                 canvas.drawText(labelText, centerX, textY, textPaint);
             }
+        }
+        
+        // Draw grid
+        for (int i = 0; i <= cols; i++) {
+            float x = i * cellWidth;
+            canvas.drawLine(x, 0, x, height, gridPaint);
+        }
+
+        for (int i = 0; i <= rows; i++) {
+            float y = i * cellHeight;
+            canvas.drawLine(0, y, width, y, gridPaint);
         }
     }
 
@@ -230,26 +254,8 @@ public class A4PreviewView extends View {
         float cellWidth = width / (float) cols;
         float cellHeight = height / (float) rows;
 
-        // Draw grid
-        Paint pdfGridPaint = new Paint();
-        pdfGridPaint.setColor(Color.rgb(100, 100, 100));
-        pdfGridPaint.setStrokeWidth(borderWidth);
-        pdfGridPaint.setStyle(Paint.Style.STROKE);
-        pdfGridPaint.setAntiAlias(true);
-
-        for (int i = 0; i <= cols; i++) {
-            float x = i * cellWidth;
-            canvas.drawLine(x, 0, x, height, pdfGridPaint);
-        }
-
-        for (int i = 0; i <= rows; i++) {
-            float y = i * cellHeight;
-            canvas.drawLine(0, y, width, y, pdfGridPaint);
-        }
-
         // Draw label backgrounds and text
         Paint pdfLabelBgPaint = new Paint();
-        pdfLabelBgPaint.setColor(labelBackgroundColor);
         pdfLabelBgPaint.setStyle(Paint.Style.FILL);
         pdfLabelBgPaint.setAntiAlias(true);
         
@@ -267,11 +273,24 @@ public class A4PreviewView extends View {
             for (int col = 0; col < cols; col++) {
                 float cellLeft = col * cellWidth;
                 float cellTop = row * cellHeight;
+                float cellRight = cellLeft + cellWidth;
+                float cellBottom = cellTop + cellHeight;
+                
+                // Setup gradient or solid background
+                if (isGradient) {
+                    LinearGradient gradient = new LinearGradient(
+                        cellLeft, cellTop, cellRight, cellBottom,
+                        gradientStartColor, gradientEndColor,
+                        Shader.TileMode.CLAMP
+                    );
+                    pdfLabelBgPaint.setShader(gradient);
+                } else {
+                    pdfLabelBgPaint.setShader(null);
+                    pdfLabelBgPaint.setColor(labelBackgroundColor);
+                }
                 
                 // Draw label background
-                canvas.drawRect(cellLeft, cellTop,
-                              cellLeft + cellWidth, cellTop + cellHeight,
-                              pdfLabelBgPaint);
+                canvas.drawRect(cellLeft, cellTop, cellRight, cellBottom, pdfLabelBgPaint);
                 
                 float centerX = cellLeft + cellWidth / 2f;
                 float centerY = cellTop + cellHeight / 2f;
@@ -279,6 +298,23 @@ public class A4PreviewView extends View {
 
                 canvas.drawText(labelText, centerX, textY, pdfTextPaint);
             }
+        }
+        
+        // Draw grid
+        Paint pdfGridPaint = new Paint();
+        pdfGridPaint.setColor(Color.rgb(100, 100, 100));
+        pdfGridPaint.setStrokeWidth(borderWidth);
+        pdfGridPaint.setStyle(Paint.Style.STROKE);
+        pdfGridPaint.setAntiAlias(true);
+
+        for (int i = 0; i <= cols; i++) {
+            float x = i * cellWidth;
+            canvas.drawLine(x, 0, x, height, pdfGridPaint);
+        }
+
+        for (int i = 0; i <= rows; i++) {
+            float y = i * cellHeight;
+            canvas.drawLine(0, y, width, y, pdfGridPaint);
         }
 
         // Restore canvas state

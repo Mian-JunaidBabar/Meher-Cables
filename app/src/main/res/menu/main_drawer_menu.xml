@@ -3,9 +3,9 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <group android:checkableBehavior="single">
         <item
-            android:id="@+id/nav_save_labels"
-            android:icon="@drawable/ic_save"
-            android:title="Save Labels" />
+            android:id="@+id/nav_label_maker"
+            android:icon="@drawable/ic_settings"
+            android:title="Label Maker" />
         <item
             android:id="@+id/nav_rate_list"
             android:icon="@drawable/ic_rate_list"

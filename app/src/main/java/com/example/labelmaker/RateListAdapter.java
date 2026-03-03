@@ -31,6 +31,13 @@ public class RateListAdapter extends RecyclerView.Adapter<RateListAdapter.RateVi
         holder.productName.setText(item.getProductName());
         holder.oldRate.setText(item.getOldRate());
         holder.newRate.setText(item.getNewRate());
+
+        // Alternating row colors for spreadsheet look
+        if (position % 2 == 0) {
+            holder.itemView.setBackgroundColor(android.graphics.Color.parseColor("#FFFFFF")); // White
+        } else {
+            holder.itemView.setBackgroundColor(android.graphics.Color.parseColor("#F5F8F8")); // Light background from Stitch
+        }
     }
 
     @Override
