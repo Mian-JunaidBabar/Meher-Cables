@@ -13,20 +13,21 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.google.android.material.button.MaterialButton;
-import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.google.android.material.slider.Slider;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Locale;
 
 public class LabelMakerFragment extends Fragment {
 
@@ -39,19 +40,17 @@ public class LabelMakerFragment extends Fragment {
 
     private A4PreviewView a4PreviewView;
     private EditText textInput, rowsInput, columnsInput;
-    private MaterialButton exportButton, textColorButton, backgroundColorButton;
-    private MaterialButton gradientStartButton, gradientEndButton;
-    private MaterialButtonToggleGroup backgroundTypeToggle;
-    private LinearLayout solidColorContainer, gradientEditorContainer;
-    private TextView fontSizeValue;
+    private MaterialButton exportButton, textColorButton;
+    private MaterialButton presetWhiteBtn, presetGrayBtn, presetBlackBtn;
     private Slider fontSizeSlider;
+    private TextView fontSizeValue;
 
     private int textColor = Color.BLACK;
     private int backgroundColor = Color.WHITE;
-    private int gradientStartColor = Color.parseColor("#006666"); // Primary Teal
-    private int gradientEndColor = Color.parseColor("#0f2323"); // Dark Background
-    private boolean isGradient = false;
     private float fontSize = 12f;
+
+    private ActivityResultLauncher<Intent> createPngLauncher;
+    private ActivityResultLauncher<Intent> createPdfLauncher;
 
     @Nullable
     @Override
@@ -63,7 +62,35 @@ public class LabelMakerFragment extends Fragment {
         setupListeners();
         updatePreview();
 
+        registerLaunchers();
+
         return view;
+    }
+
+    private void registerLaunchers() {
+        createPdfLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == getActivity().RESULT_OK && result.getData() != null) {
+                    Uri uri = result.getData().getData();
+                    if (uri != null) {
+                        createPdfDocument(uri);
+                    }
+                }
+            }
+        );
+
+        createPngLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == getActivity().RESULT_OK && result.getData() != null) {
+                    Uri uri = result.getData().getData();
+                    if (uri != null) {
+                        savePng(uri);
+                    }
+                }
+            }
+        );
     }
 
     private void initializeViews(View view) {
@@ -73,17 +100,19 @@ public class LabelMakerFragment extends Fragment {
         columnsInput = view.findViewById(R.id.columns_input);
         
         exportButton = view.findViewById(R.id.export_button);
+        MaterialButton exportPngBtn = view.findViewById(R.id.btn_export_png);
         fontSizeSlider = view.findViewById(R.id.font_size_slider);
         fontSizeValue = view.findViewById(R.id.font_size_value);
         
         textColorButton = view.findViewById(R.id.text_color_button);
-        backgroundColorButton = view.findViewById(R.id.background_color_button);
-        gradientStartButton = view.findViewById(R.id.gradient_start_color_button);
-        gradientEndButton = view.findViewById(R.id.gradient_end_color_button);
-        
-        backgroundTypeToggle = view.findViewById(R.id.background_type_toggle);
-        solidColorContainer = view.findViewById(R.id.solid_color_container);
-        gradientEditorContainer = view.findViewById(R.id.gradient_editor_container);
+        presetWhiteBtn = view.findViewById(R.id.preset_white);
+        presetGrayBtn = view.findViewById(R.id.preset_gray);
+        presetBlackBtn = view.findViewById(R.id.preset_black);
+
+        // Wire export PNG button
+        if (exportPngBtn != null) {
+            exportPngBtn.setOnClickListener(v -> exportToPng());
+        }
     }
 
     private void setupListeners() {
@@ -112,48 +141,26 @@ public class LabelMakerFragment extends Fragment {
             updatePreview();
         });
         
-        // Background Type Toggle
-        backgroundTypeToggle.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
-            if (isChecked) {
-                if (checkedId == R.id.btn_solid_color) {
-                    isGradient = false;
-                    solidColorContainer.setVisibility(View.VISIBLE);
-                    gradientEditorContainer.setVisibility(View.GONE);
-                } else if (checkedId == R.id.btn_gradient) {
-                    isGradient = true;
-                    solidColorContainer.setVisibility(View.GONE);
-                    gradientEditorContainer.setVisibility(View.VISIBLE);
-                }
-                updatePreview();
-            }
-        });
-
-        // Color buttons (Placeholders for actual color pickers)
+        // Text color toggle (keeps it simple: black / white for contrast)
         textColorButton.setOnClickListener(v -> {
-            // Toggle for demonstration
             textColor = (textColor == Color.BLACK) ? Color.WHITE : Color.BLACK;
             updateButtonColor(textColorButton, textColor);
             updatePreview();
         });
 
-        backgroundColorButton.setOnClickListener(v -> {
-            // Toggle for demonstration
-            backgroundColor = (backgroundColor == Color.WHITE) ? Color.parseColor("#1e293b") : Color.WHITE;
-            updateButtonColor(backgroundColorButton, backgroundColor);
+        // Background preset buttons (white, gray, black)
+        presetWhiteBtn.setOnClickListener(v -> {
+            backgroundColor = Color.WHITE;
             updatePreview();
         });
 
-        gradientStartButton.setOnClickListener(v -> {
-            // Toggle for demonstration
-            gradientStartColor = (gradientStartColor == Color.parseColor("#006666")) ? Color.parseColor("#2ea4a4") : Color.parseColor("#006666");
-            updateButtonColor(gradientStartButton, gradientStartColor);
+        presetGrayBtn.setOnClickListener(v -> {
+            backgroundColor = Color.parseColor("#BFBFBF");
             updatePreview();
         });
 
-        gradientEndButton.setOnClickListener(v -> {
-            // Toggle for demonstration
-            gradientEndColor = (gradientEndColor == Color.parseColor("#0f2323")) ? Color.parseColor("#1e293b") : Color.parseColor("#0f2323");
-            updateButtonColor(gradientEndButton, gradientEndColor);
+        presetBlackBtn.setOnClickListener(v -> {
+            backgroundColor = Color.BLACK;
             updatePreview();
         });
 
@@ -166,7 +173,8 @@ public class LabelMakerFragment extends Fragment {
     }
     
     private void updateFontSizeDisplay() {
-        fontSizeValue.setText(String.format("%.0fpx", fontSize));
+        // Use Locale.ROOT to avoid DefaultLocale lint warning
+        fontSizeValue.setText(String.format(Locale.ROOT, "%.0fpx", fontSize));
     }
 
     private void updatePreview() {
@@ -178,11 +186,11 @@ public class LabelMakerFragment extends Fragment {
         rows = Math.max(1, Math.min(50, rows));
         cols = Math.max(1, Math.min(20, cols));
 
-        if (isGradient) {
-            a4PreviewView.setLabelData(text, rows, cols, fontSize, textColor, gradientStartColor, gradientEndColor);
-        } else {
-            a4PreviewView.setLabelData(text, rows, cols, fontSize, textColor, backgroundColor);
-        }
+        // Ensure preview and exports use a darker text color if grey-ish
+        int effectiveTextColor = (textColor == Color.TRANSPARENT) ? Color.BLACK : textColor;
+
+        // Only use solid background colors now
+        a4PreviewView.setLabelData(text, rows, cols, fontSize, effectiveTextColor, backgroundColor);
     }
 
     private int parseIntOrDefault(String value, int defaultValue) {
@@ -201,9 +209,6 @@ public class LabelMakerFragment extends Fragment {
         editor.putFloat("fontSize", fontSize);
         editor.putInt("textColor", textColor);
         editor.putInt("backgroundColor", backgroundColor);
-        editor.putInt("gradientStartColor", gradientStartColor);
-        editor.putInt("gradientEndColor", gradientEndColor);
-        editor.putBoolean("isGradient", isGradient);
         editor.apply();
         
         Toast.makeText(requireContext(), "Configuration saved successfully!", Toast.LENGTH_SHORT).show();
@@ -223,27 +228,16 @@ public class LabelMakerFragment extends Fragment {
         
         textColor = prefs.getInt("textColor", Color.BLACK);
         backgroundColor = prefs.getInt("backgroundColor", Color.WHITE);
-        gradientStartColor = prefs.getInt("gradientStartColor", Color.parseColor("#006666"));
-        gradientEndColor = prefs.getInt("gradientEndColor", Color.parseColor("#0f2323"));
-        isGradient = prefs.getBoolean("isGradient", false);
 
         fontSizeSlider.setValue(fontSize);
         updateFontSizeDisplay();
         
         updateButtonColor(textColorButton, textColor);
-        updateButtonColor(backgroundColorButton, backgroundColor);
-        updateButtonColor(gradientStartButton, gradientStartColor);
-        updateButtonColor(gradientEndButton, gradientEndColor);
+        updateButtonColor(presetWhiteBtn, Color.WHITE);
+        updateButtonColor(presetGrayBtn, Color.parseColor("#BFBFBF"));
+        updateButtonColor(presetBlackBtn, Color.BLACK);
 
-        if (isGradient) {
-            backgroundTypeToggle.check(R.id.btn_gradient);
-            solidColorContainer.setVisibility(View.GONE);
-            gradientEditorContainer.setVisibility(View.VISIBLE);
-        } else {
-            backgroundTypeToggle.check(R.id.btn_solid_color);
-            solidColorContainer.setVisibility(View.VISIBLE);
-            gradientEditorContainer.setVisibility(View.GONE);
-        }
+        // No more gradient UI states to restore
     }
 
     private void exportToPdf() {
@@ -258,21 +252,21 @@ public class LabelMakerFragment extends Fragment {
         intent.setType("application/pdf");
         intent.putExtra(Intent.EXTRA_TITLE, "cable_labels.pdf");
 
-        startActivityForResult(intent, CREATE_FILE_REQUEST_CODE);
+        createPdfLauncher.launch(intent);
     }
 
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        
-        if (requestCode == CREATE_FILE_REQUEST_CODE && resultCode == getActivity().RESULT_OK) {
-            if (data != null) {
-                Uri uri = data.getData();
-                if (uri != null) {
-                    createPdfDocument(uri);
-                }
-            }
+    private void exportToPng() {
+        if (textInput.getText().toString().trim().isEmpty()) {
+            Toast.makeText(requireContext(), "Please enter label text before exporting", Toast.LENGTH_SHORT).show();
+            return;
         }
+
+        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("image/png");
+        intent.putExtra(Intent.EXTRA_TITLE, "cable_labels_" + System.currentTimeMillis() + ".png");
+
+        createPngLauncher.launch(intent);
     }
 
     private void createPdfDocument(Uri uri) {
@@ -304,6 +298,39 @@ public class LabelMakerFragment extends Fragment {
         } catch (IOException e) {
             e.printStackTrace();
             Toast.makeText(requireContext(), "Error exporting PDF: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void savePng(Uri uri) {
+        try {
+            // Render full A4-sized bitmap using the A4Preview drawing code scaled to pixels
+            int pxWidth = 1240; // ~ 8.5in at 150dpi
+            int pxHeight = 1754; // maintain aspect ratio
+
+            android.graphics.Bitmap bitmap = android.graphics.Bitmap.createBitmap(pxWidth, pxHeight, android.graphics.Bitmap.Config.ARGB_8888);
+            android.graphics.Canvas canvas = new android.graphics.Canvas(bitmap);
+            canvas.drawColor(Color.WHITE);
+
+            // Reuse preview drawing but scaled to pxWidth/pxHeight
+            a4PreviewView.drawToCanvas(canvas, pxWidth, pxHeight);
+
+            OutputStream os = null;
+            try {
+                os = requireContext().getContentResolver().openOutputStream(uri);
+                if (os != null) {
+                    bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, os);
+                    os.flush();
+                } else {
+                    throw new IOException("Unable to open output stream");
+                }
+            } finally {
+                if (os != null) try { os.close(); } catch (IOException ignored) {}
+            }
+
+            Toast.makeText(requireContext(), "PNG exported successfully!", Toast.LENGTH_LONG).show();
+        } catch (Exception e) {
+            android.util.Log.e("LabelMakerFragment", "Error exporting PNG", e);
+            Toast.makeText(requireContext(), "Error exporting PNG: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 }

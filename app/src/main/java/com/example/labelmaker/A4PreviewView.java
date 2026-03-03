@@ -6,7 +6,6 @@ import android.graphics.Color;
 import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Rect;
-import android.graphics.RectF;
 import android.graphics.Shader;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
@@ -38,9 +37,9 @@ public class A4PreviewView extends View {
     
     // Zoom functionality
     private float scaleFactor = 1.0f;
-    private float minScale = 0.5f;
-    private float maxScale = 5.0f;
-    
+    private final float minScale = 0.5f;
+    private final float maxScale = 5.0f;
+
     private ScaleGestureDetector scaleDetector;
 
     public A4PreviewView(Context context) {
@@ -95,6 +94,16 @@ public class A4PreviewView extends View {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         scaleDetector.onTouchEvent(event);
+        // For accessibility, call performClick on ACTION_UP
+        if (event.getAction() == MotionEvent.ACTION_UP) {
+            performClick();
+        }
+        return true;
+    }
+
+    @Override
+    public boolean performClick() {
+        super.performClick();
         return true;
     }
 
@@ -149,6 +158,8 @@ public class A4PreviewView extends View {
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int width = MeasureSpec.getSize(widthMeasureSpec);
         int height = (int) (width * A4_ASPECT_RATIO);
+        // Ensure we at least have a reasonable height so preview is visible
+        height = Math.max(height, 200);
         setMeasuredDimension(width, height);
     }
 
@@ -162,7 +173,10 @@ public class A4PreviewView extends View {
         // Draw white background
         canvas.drawRect(0, 0, width, height, backgroundPaint);
 
-        if (labelText.isEmpty() || rows <= 0 || cols <= 0) {
+        // If there is no label text, still draw the grid so preview is visible
+        if ((labelText == null || labelText.isEmpty()) || rows <= 0 || cols <= 0) {
+            // draw only grid outline for empty preview
+            drawLabelsAndGrid(canvas, width, height);
             return;
         }
         
@@ -181,11 +195,14 @@ public class A4PreviewView extends View {
         // Scale font size based on preview size vs actual A4 size
         float scaledFontSize = fontSize * (width / A4_WIDTH_POINTS);
         textPaint.setTextSize(scaledFontSize);
-        textPaint.setColor(textColor);
+
+        // Force darker text color if configured value is light to improve contrast
+        textPaint.setColor(ensureDarkColor(textColor));
         textPaint.setShader(null);
         
         // Measure text bounds for centering
-        textPaint.getTextBounds(labelText, 0, labelText.length(), textBounds);
+        if (labelText == null) labelText = "";
+        textPaint.getTextBounds(labelText.isEmpty() ? " " : labelText, 0, labelText.isEmpty() ? 1 : labelText.length(), textBounds);
 
         for (int row = 0; row < rows; row++) {
             for (int col = 0; col < cols; col++) {
@@ -216,7 +233,9 @@ public class A4PreviewView extends View {
                 float centerY = cellTop + cellHeight / 2f;
                 float textY = centerY - textBounds.exactCenterY();
 
-                canvas.drawText(labelText, centerX, textY, textPaint);
+                if (!labelText.isEmpty()) {
+                    canvas.drawText(labelText, centerX, textY, textPaint);
+                }
             }
         }
         
@@ -230,6 +249,15 @@ public class A4PreviewView extends View {
             float y = i * cellHeight;
             canvas.drawLine(0, y, width, y, gridPaint);
         }
+    }
+
+    private int ensureDarkColor(int color) {
+        // Compute perceived brightness and switch to black if too light
+        int r = (color >> 16) & 0xFF;
+        int g = (color >> 8) & 0xFF;
+        int b = color & 0xFF;
+        double brightness = (0.299 * r + 0.587 * g + 0.114 * b);
+        return brightness > 160 ? Color.BLACK : color;
     }
 
     /**
@@ -246,7 +274,8 @@ public class A4PreviewView extends View {
         bgPaint.setStyle(Paint.Style.FILL);
         canvas.drawRect(0, 0, width, height, bgPaint);
 
-        if (labelText.isEmpty() || rows <= 0 || cols <= 0) {
+        if (labelText == null) labelText = "";
+        if (rows <= 0 || cols <= 0) {
             canvas.restore();
             return;
         }
@@ -263,11 +292,13 @@ public class A4PreviewView extends View {
         pdfTextPaint.setAntiAlias(true);
         pdfTextPaint.setTextAlign(Paint.Align.CENTER);
         pdfTextPaint.setTextSize(fontSize);
-        pdfTextPaint.setColor(textColor);
+        pdfTextPaint.setColor(ensureDarkColor(textColor));
         pdfTextPaint.setShader(null);
 
         Rect bounds = new Rect();
-        pdfTextPaint.getTextBounds(labelText, 0, labelText.length(), bounds);
+        if (!labelText.isEmpty()) {
+            pdfTextPaint.getTextBounds(labelText, 0, labelText.length(), bounds);
+        }
 
         for (int row = 0; row < rows; row++) {
             for (int col = 0; col < cols; col++) {
@@ -296,7 +327,9 @@ public class A4PreviewView extends View {
                 float centerY = cellTop + cellHeight / 2f;
                 float textY = centerY - bounds.exactCenterY();
 
-                canvas.drawText(labelText, centerX, textY, pdfTextPaint);
+                if (!labelText.isEmpty()) {
+                    canvas.drawText(labelText, centerX, textY, pdfTextPaint);
+                }
             }
         }
         

@@ -40,8 +40,7 @@
                         
                         <com.google.android.material.card.MaterialCardView
                             android:layout_width="match_parent"
-                            android:layout_height="0dp"
-                            app:layout_constraintDimensionRatio="1:1.414"
+                            android:layout_height="wrap_content"
                             app:cardElevation="8dp"
                             app:cardCornerRadius="0dp"
                             android:theme="@style/Widget.LabelMaker.A4Preview">
@@ -49,7 +48,7 @@
                             <com.example.labelmaker.A4PreviewView
                                 android:id="@+id/a4_preview"
                                 android:layout_width="match_parent"
-                                android:layout_height="match_parent"
+                                android:layout_height="wrap_content"
                                 android:background="@color/white" />
 
                         </com.google.android.material.card.MaterialCardView>
@@ -200,7 +199,7 @@
                             android:stepSize="1" />
                     </LinearLayout>
 
-                    <!-- Color & Gradient Editor -->
+                    <!-- Color & Styling -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -219,7 +218,7 @@
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
-                        android:layout_marginBottom="16dp">
+                        android:layout_marginBottom="12dp">
 
                         <TextView
                             android:layout_width="0dp"
@@ -238,121 +237,55 @@
                             app:strokeColor="?attr/colorOutline" />
                     </LinearLayout>
 
-                    <!-- Background Type Toggle -->
-                    <com.google.android.material.button.MaterialButtonToggleGroup
-                        android:id="@+id/background_type_toggle"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="16dp"
-                        app:singleSelection="true"
-                        app:selectionRequired="true"
-                        app:checkedButton="@+id/btn_solid_color">
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btn_solid_color"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:layout_height="wrap_content"
-                            style="?attr/materialButtonOutlinedStyle"
-                            android:text="Solid" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btn_gradient"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:layout_height="wrap_content"
-                            style="?attr/materialButtonOutlinedStyle"
-                            android:text="Gradient" />
-                    </com.google.android.material.button.MaterialButtonToggleGroup>
-
-                    <!-- Solid Color Select (Visible by default) -->
+                    <!-- Background Presets -->
                     <LinearLayout
-                        android:id="@+id/solid_color_container"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="24dp">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:layout_height="wrap_content"
-                            android:text="Background Color"
-                            android:textAppearance="?attr/textAppearanceBodyMedium" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/background_color_button"
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
-                            app:cornerRadius="24dp"
-                            app:backgroundTint="@color/white"
-                            app:strokeWidth="1dp"
-                            app:strokeColor="?attr/colorOutline" />
-                    </LinearLayout>
-
-                    <!-- Gradient Editor (Hidden by default) -->
-                    <LinearLayout
-                        android:id="@+id/gradient_editor_container"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:visibility="gone"
-                        android:layout_marginBottom="24dp">
+                        android:layout_marginBottom="16dp">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Background Color"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:layout_marginBottom="8dp" />
 
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:orientation="horizontal"
-                            android:baselineAligned="false">
+                            android:gravity="center_vertical">
 
-                            <LinearLayout
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/preset_white"
                                 android:layout_width="0dp"
                                 android:layout_weight="1"
-                                android:layout_height="wrap_content"
-                                android:orientation="vertical"
-                                android:gravity="center_horizontal">
+                                android:layout_height="48dp"
+                                android:text="White"
+                                app:cornerRadius="8dp"
+                                app:backgroundTint="@color/white" />
 
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Start Color"
-                                    android:textAppearance="?attr/textAppearanceLabelSmall"
-                                    android:layout_marginBottom="8dp"/>
-
-                                <com.google.android.material.button.MaterialButton
-                                    android:id="@+id/gradient_start_color_button"
-                                    android:layout_width="48dp"
-                                    android:layout_height="48dp"
-                                    app:cornerRadius="24dp"
-                                    app:backgroundTint="?attr/colorPrimary"
-                                    app:strokeWidth="1dp"
-                                    app:strokeColor="?attr/colorOutline" />
-                            </LinearLayout>
-
-                            <LinearLayout
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/preset_gray"
                                 android:layout_width="0dp"
                                 android:layout_weight="1"
-                                android:layout_height="wrap_content"
-                                android:orientation="vertical"
-                                android:gravity="center_horizontal">
+                                android:layout_height="48dp"
+                                android:layout_marginStart="8dp"
+                                android:layout_marginEnd="8dp"
+                                android:text="Gray"
+                                app:cornerRadius="8dp"
+                                app:backgroundTint="@color/md_theme_dark_surface" />
 
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="End Color"
-                                    android:textAppearance="?attr/textAppearanceLabelSmall"
-                                    android:layout_marginBottom="8dp"/>
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/preset_black"
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:layout_height="48dp"
+                                android:text="Black"
+                                app:cornerRadius="8dp"
+                                app:backgroundTint="@color/black" />
 
-                                <com.google.android.material.button.MaterialButton
-                                    android:id="@+id/gradient_end_color_button"
-                                    android:layout_width="48dp"
-                                    android:layout_height="48dp"
-                                    app:cornerRadius="24dp"
-                                    app:backgroundTint="?attr/colorSecondary"
-                                    app:strokeWidth="1dp"
-                                    app:strokeColor="?attr/colorOutline" />
-                            </LinearLayout>
                         </LinearLayout>
                     </LinearLayout>
 
@@ -366,6 +299,19 @@
                         app:iconGravity="textStart"
                         app:cornerRadius="12dp"
                         style="@style/Widget.Material3.Button" />
+
+                    <!-- PNG export button -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_export_png"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:text="Export PNG"
+                        android:textSize="16sp"
+                        app:icon="@drawable/ic_image"
+                        app:iconGravity="textStart"
+                        app:cornerRadius="12dp"
+                        style="@style/Widget.Material3.Button"
+                        android:layout_marginTop="8dp" />
 
                 </LinearLayout>
 
