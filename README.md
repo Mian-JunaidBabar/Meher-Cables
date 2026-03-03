@@ -1,199 +1,48 @@
-# Cable Label Maker
+# 🛠️ PakLabel Pro (Karkhana Edition)
 
-A professional native Android application for generating printable A4 cable labels with a modern Material Design 3 interface.
+**Empowering Pakistani Cable Manufacturers with Professional Labels & Rate Lists — No PC Required.**
 
-## Features
+In local markets like Lahore and Karachi, many small-scale cable makers pay "print wallas" just to format simple labels or rate lists because they don't have laptops or Excel skills. **PakLabel Pro** changes that by putting a professional designer and spreadsheet tool directly into the manufacturer's pocket.
 
-### 🎨 Modern UI/UX
-- **Material Design 3** implementation with dynamic color theming
-- **Drawer Navigation** with collapsible sidebar for future settings expansion
-- **Responsive Layout** with cards and proper spacing
-- **Custom Toolbar** with hamburger menu icon
-- **Dark Mode Support** with Material You color schemes
+---
 
-### ⚙️ Label Customization
-- **Multi-line Text Input** for label content
-- **Grid Configuration** with adjustable rows and columns (1-50 rows, 1-20 columns)
-- **Font Size Control** (4-72 points)
-- **Text Color Picker** with RGB sliders and preset colors
-- **Gradient Editor** with start and end color selection
-- **Live Preview** that updates in real-time as you type
+## 🎯 Who is this for?
 
-### 📄 A4 Preview
-- **Exact A4 Aspect Ratio** (595 x 842 points)
-- **Scales to Fit Screen** while maintaining proper proportions
-- **Dynamic Grid Drawing** based on row/column configuration
-- **Centered Text** in each cell with accurate positioning
-- **Material Card** elevation for polish
+* **Local Cable Manufacturers:** Create professional 15mm/24mm labels for cable coils in seconds.
+* **Wholesale Traders:** Generate clean, updated Rate Lists (Old vs. New rates) without touching a computer.
+* **Small Workshop Owners:** Anyone who needs to organize product pricing and branding but wants to avoid the cost and hassle of professional printing services.
 
-### 💾 Data Persistence
-- **SharedPreferences** for saving and loading configurations
-- **Save Labels** action in navigation drawer
-- Remembers:
-  - Label text
-  - Grid dimensions
-  - Font size
-  - Text color
-  - Gradient start/end colors
+---
 
-### 📱 PDF Export
-- **Native PdfDocument** API (no third-party libraries)
-- **Exact A4 Dimensions** (595 x 842 points)
-- **System File Picker** via Intent.ACTION_CREATE_DOCUMENT
-- User chooses exact save location
-- **Pixel-perfect Export** matching preview
-- Draws grid, text, and gradients directly to PDF canvas
+## ✨ Key Features
 
-## Technical Architecture
+* **Reactive A4 Label Preview:** Set your rows and columns, type your text, and see exactly how it will look on paper before you print.
+* **Industrial Rate Lists:** A dedicated section to track product names, previous rates, and current rates.
+* **PDF & PNG Export:** Save your work as a high-quality PDF to send straight to a printer or a PNG to share on WhatsApp.
+* **Native Material 3 UI:** A clean, modern interface designed for high visibility in both factory (Dark) and office (Light) environments.
+* **Zero Learning Curve:** No Excel formulas, no Word formatting—just type and export.
 
-### Java + XML
-- Pure Java implementation (no Kotlin)
-- Traditional XML layouts (no Jetpack Compose)
-- Minimum SDK: API 26 (Android 8.0 Oreo)
-- Target SDK: API 36
+---
 
-### Key Components
+## 🚀 How to Use It
 
-#### MainActivity.java
-- Manages UI lifecycle and user interactions
-- Handles color picker dialogs
-- Implements SharedPreferences persistence
-- Manages PDF export workflow
-- Sets up drawer navigation and toolbar
+### 1. Generating Labels
+1.  Open the **Label Maker** from the side drawer.
+2.  Enter your product details (e.g., "1.5mm Copper Wire").
+3.  Adjust the **Grid Layout** (Rows x Columns) to fit your label stickers.
+4.  Tweak the **Font Size** until it looks perfect in the live A4 preview.
+5.  Tap **Export PDF** and save it to your "Downloads" folder.
 
-#### A4PreviewView.java
-- Custom View extending Android View class
-- Maintains A4 aspect ratio (595:842)
-- Efficient rendering with proper Paint reuse
-- Separate `drawToCanvas()` method for PDF export at actual size
-- Handles both solid colors and gradients
+### 2. Creating a Rate List
+1.  Open the **Rate List** screen from the drawer.
+2.  Add your products one by one using the (+) button.
+3.  Input the **Product Name**, **Old Rate**, and **New Rate**.
+4.  Once your list is complete, tap **Download PDF**.
+5.  Share the file directly with your customers via WhatsApp or Telegram.
 
-#### ColorPickerDialog.java
-- Custom Material Design 3 dialog
-- RGB sliders with real-time preview
-- 8 preset quick colors (Black, White, Red, Green, Blue, Yellow, Cyan, Magenta)
-- Clean callback interface for color selection
+---
 
-### Layouts
+## 🛠️ Built For The Community
+This app is designed to be lightweight and work on any Android device (like the Sony Xperia or LG V60). It works offline, ensuring that your business keeps moving even without a stable internet connection in the karkhana.
 
-#### activity_main.xml
-- DrawerLayout root container
-- CoordinatorLayout for proper scrolling behavior
-- MaterialToolbar with hamburger icon
-- Scrollable control panel with Material cards
-- A4PreviewView in bottom half with card elevation
-- NavigationView for sidebar
-
-#### dialog_color_picker.xml
-- Material card for color preview
-- Three SeekBars for RGB values
-- GridLayout with 8 preset color buttons
-- Real-time value displays
-
-#### nav_header_main.xml
-- Material Design 3 styled header
-- App icon and title
-- Descriptive subtitle
-
-### Resources
-
-#### Material Design 3 Colors
-- Complete light and dark theme color schemes
-- Primary, Secondary, Tertiary color sets
-- Surface, Background, and Error colors
-- Proper contrast ratios for accessibility
-
-#### Vector Drawables
-- `ic_menu.xml` - Hamburger menu icon
-- `ic_palette.xml` - Color picker icon
-- `ic_gradient.xml` - Gradient editor icon
-- `ic_pdf.xml` - PDF export icon
-- `ic_save.xml` - Save configuration icon
-
-## Usage
-
-### 1. Enter Label Text
-Type your cable label text (supports multi-line)
-
-### 2. Configure Grid
-- Set number of rows (1-50)
-- Set number of columns (1-20)
-- Adjust font size (4-72 points)
-
-### 3. Customize Colors
-- **Text Color**: Choose solid color for text
-- **Gradient**: Select start and end colors for gradient effect
-  - If start and end colors differ, gradient is applied
-  - If same, solid text color is used
-
-### 4. Preview
-Watch the live A4 preview update as you make changes
-
-### 5. Save Configuration
-Open drawer menu → "Save Labels" to persist your settings
-
-### 6. Export PDF
-Click "Export to PDF" → Choose save location → PDF created at A4 size
-
-## Building the App
-
-```bash
-# Clone repository
-cd /home/junaid/Projects/LabelMaker
-
-# Build debug APK
-./gradlew assembleDebug
-
-# Build release APK
-./gradlew assembleRelease
-
-# Install on device
-./gradlew installDebug
-```
-
-## APK Location
-After building, find the APK at:
-```
-app/build/outputs/apk/debug/app-debug.apk
-```
-
-## Design Decisions
-
-### Why Material Design 3?
-- Modern, polished appearance
-- Consistent with Android design guidelines
-- Built-in dark mode support
-- Accessible color contrast
-
-### Why DrawerLayout?
-- Provides clean navigation for future expansion
-- Familiar Android pattern
-- Easy to add more settings/features
-
-### Why Custom View for Preview?
-- Full control over rendering
-- Maintains exact A4 aspect ratio
-- Efficient drawing with Canvas API
-- Reusable rendering logic for PDF export
-
-### Why Native PdfDocument?
-- No external dependencies
-- Lightweight and fast
-- Direct Canvas API access
-- Same rendering as preview
-
-## Future Enhancements
-- [ ] Add barcode/QR code support
-- [ ] Multiple label templates
-- [ ] Image/logo insertion
-- [ ] Font family selection
-- [ ] Border styling options
-- [ ] Batch export multiple pages
-- [ ] Import/export configuration files
-- [ ] Print directly from app
-
-## License
-MIT License - Feel free to use and modify
-
-## Author
-Built as a native Android demonstration following Material Design 3 guidelines
+**Developed with ❤️ for the hardworking manufacturers of Pakistan.**
