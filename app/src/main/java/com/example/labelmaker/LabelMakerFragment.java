@@ -179,6 +179,11 @@ public class LabelMakerFragment extends Fragment {
 
     private void updatePreview() {
         String text = textInput.getText().toString();
+        boolean useTempText = text.isEmpty();
+        if (useTempText) {
+            text = "temp text";
+        }
+        
         int rows = parseIntOrDefault(rowsInput.getText().toString(), 10);
         int cols = parseIntOrDefault(columnsInput.getText().toString(), 3);
 
@@ -188,6 +193,9 @@ public class LabelMakerFragment extends Fragment {
 
         // Ensure preview and exports use a darker text color if grey-ish
         int effectiveTextColor = (textColor == Color.TRANSPARENT) ? Color.BLACK : textColor;
+        if (useTempText) {
+            effectiveTextColor = Color.TRANSPARENT;
+        }
 
         // Only use solid background colors now
         a4PreviewView.setLabelData(text, rows, cols, fontSize, effectiveTextColor, backgroundColor);

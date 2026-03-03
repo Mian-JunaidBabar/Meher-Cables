@@ -107,10 +107,6 @@ public class A4PreviewView extends View {
         return true;
     }
 
-    private boolean isGradient = false;
-    private int gradientStartColor = Color.WHITE;
-    private int gradientEndColor = Color.WHITE;
-
     public void setLabelData(String text, int rows, int cols, float fontSize, 
                             int textColor, int backgroundColor) {
         this.labelText = text != null ? text : "";
@@ -119,22 +115,6 @@ public class A4PreviewView extends View {
         this.fontSize = Math.max(4f, fontSize);
         this.textColor = textColor;
         this.labelBackgroundColor = backgroundColor;
-        this.isGradient = false; // Default to solid color when this method is called
-        
-        invalidate();
-    }
-    
-    // New overloaded method for gradients
-    public void setLabelData(String text, int rows, int cols, float fontSize, 
-                            int textColor, int gradientStart, int gradientEnd) {
-        this.labelText = text != null ? text : "";
-        this.rows = Math.max(1, rows);
-        this.cols = Math.max(1, cols);
-        this.fontSize = Math.max(4f, fontSize);
-        this.textColor = textColor;
-        this.gradientStartColor = gradientStart;
-        this.gradientEndColor = gradientEnd;
-        this.isGradient = true;
         
         invalidate();
     }
@@ -196,8 +176,7 @@ public class A4PreviewView extends View {
         float scaledFontSize = fontSize * (width / A4_WIDTH_POINTS);
         textPaint.setTextSize(scaledFontSize);
 
-        // Force darker text color if configured value is light to improve contrast
-        textPaint.setColor(ensureDarkColor(textColor));
+        textPaint.setColor(textColor);
         textPaint.setShader(null);
         
         // Measure text bounds for centering
@@ -211,19 +190,8 @@ public class A4PreviewView extends View {
                 float cellRight = cellLeft + cellWidth;
                 float cellBottom = cellTop + cellHeight;
                 
-                // Configure label background paint based on solid vs gradient
-                if (isGradient) {
-                    // Create a linear gradient from top-left to bottom-right of the cell
-                    LinearGradient gradient = new LinearGradient(
-                        cellLeft, cellTop, cellRight, cellBottom,
-                        gradientStartColor, gradientEndColor,
-                        Shader.TileMode.CLAMP
-                    );
-                    labelBgPaint.setShader(gradient);
-                } else {
-                    labelBgPaint.setShader(null);
-                    labelBgPaint.setColor(labelBackgroundColor);
-                }
+                labelBgPaint.setShader(null);
+                labelBgPaint.setColor(labelBackgroundColor);
                 
                 // Draw label background
                 canvas.drawRect(cellLeft, cellTop, cellRight, cellBottom, labelBgPaint);
@@ -249,15 +217,6 @@ public class A4PreviewView extends View {
             float y = i * cellHeight;
             canvas.drawLine(0, y, width, y, gridPaint);
         }
-    }
-
-    private int ensureDarkColor(int color) {
-        // Compute perceived brightness and switch to black if too light
-        int r = (color >> 16) & 0xFF;
-        int g = (color >> 8) & 0xFF;
-        int b = color & 0xFF;
-        double brightness = (0.299 * r + 0.587 * g + 0.114 * b);
-        return brightness > 160 ? Color.BLACK : color;
     }
 
     /**
@@ -292,7 +251,7 @@ public class A4PreviewView extends View {
         pdfTextPaint.setAntiAlias(true);
         pdfTextPaint.setTextAlign(Paint.Align.CENTER);
         pdfTextPaint.setTextSize(fontSize);
-        pdfTextPaint.setColor(ensureDarkColor(textColor));
+        pdfTextPaint.setColor(textColor);
         pdfTextPaint.setShader(null);
 
         Rect bounds = new Rect();
@@ -307,18 +266,8 @@ public class A4PreviewView extends View {
                 float cellRight = cellLeft + cellWidth;
                 float cellBottom = cellTop + cellHeight;
                 
-                // Setup gradient or solid background
-                if (isGradient) {
-                    LinearGradient gradient = new LinearGradient(
-                        cellLeft, cellTop, cellRight, cellBottom,
-                        gradientStartColor, gradientEndColor,
-                        Shader.TileMode.CLAMP
-                    );
-                    pdfLabelBgPaint.setShader(gradient);
-                } else {
-                    pdfLabelBgPaint.setShader(null);
-                    pdfLabelBgPaint.setColor(labelBackgroundColor);
-                }
+                pdfLabelBgPaint.setShader(null);
+                pdfLabelBgPaint.setColor(labelBackgroundColor);
                 
                 // Draw label background
                 canvas.drawRect(cellLeft, cellTop, cellRight, cellBottom, pdfLabelBgPaint);

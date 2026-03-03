@@ -262,9 +262,10 @@
                                 android:layout_width="0dp"
                                 android:layout_weight="1"
                                 android:layout_height="48dp"
-                                android:text="White"
                                 app:cornerRadius="8dp"
-                                app:backgroundTint="@color/white" />
+                                app:backgroundTint="@color/white"
+                                app:strokeWidth="1dp"
+                                app:strokeColor="?attr/colorOutline" />
 
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/preset_gray"
@@ -273,18 +274,20 @@
                                 android:layout_height="48dp"
                                 android:layout_marginStart="8dp"
                                 android:layout_marginEnd="8dp"
-                                android:text="Gray"
                                 app:cornerRadius="8dp"
-                                app:backgroundTint="@color/md_theme_dark_surface" />
+                                app:backgroundTint="@color/md_theme_dark_surface"
+                                app:strokeWidth="1dp"
+                                app:strokeColor="?attr/colorOutline" />
 
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/preset_black"
                                 android:layout_width="0dp"
                                 android:layout_weight="1"
                                 android:layout_height="48dp"
-                                android:text="Black"
                                 app:cornerRadius="8dp"
-                                app:backgroundTint="@color/black" />
+                                app:backgroundTint="@color/black"
+                                app:strokeWidth="1dp"
+                                app:strokeColor="?attr/colorOutline" />
 
                         </LinearLayout>
                     </LinearLayout>

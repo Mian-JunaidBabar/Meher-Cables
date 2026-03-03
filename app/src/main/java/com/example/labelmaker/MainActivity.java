@@ -41,8 +41,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         // Set toolbar title color to the theme's colorOnBackground (dark in light theme, light in dark theme)
         try {
             android.util.TypedValue typedValue = new android.util.TypedValue();
-            // resolve app theme attribute R.attr.colorOnBackground
-            boolean resolved = getTheme().resolveAttribute(R.attr.colorOnBackground, typedValue, true);
+            // resolve app theme attribute colorOnBackground
+            boolean resolved = getTheme().resolveAttribute(com.google.android.material.R.attr.colorOnBackground, typedValue, true);
             int titleColor = resolved ? typedValue.data : androidx.core.content.ContextCompat.getColor(this, android.R.color.white);
             toolbar.setTitleTextColor(titleColor);
         } catch (Exception ignored) {
