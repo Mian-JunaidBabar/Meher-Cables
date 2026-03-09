@@ -8,6 +8,7 @@ public class ColumnConfig {
 
     private String name;
     private int width;
+    private float customFontSize = -1f;
 
     public ColumnConfig(String name, int width) {
         this.name = name;
@@ -28,5 +29,13 @@ public class ColumnConfig {
 
     public void setWidth(int width) {
         this.width = width;
+    }
+
+    public float getCustomFontSize() {
+        return customFontSize;
+    }
+
+    public void setCustomFontSize(float customFontSize) {
+        this.customFontSize = customFontSize;
     }
 }

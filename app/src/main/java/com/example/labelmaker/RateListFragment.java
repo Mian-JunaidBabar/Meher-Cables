@@ -305,27 +305,22 @@ public class RateListFragment extends Fragment {
         });
 
         adapter.setOnRowClickListener((position, row) -> {
-            String title = row.getViewType() == RowModel.TYPE_SUBHEADER ? "Category Background" : "Row Background";
-            int defaultColor = row.getCustomBgColor() != 0 ? row.getCustomBgColor() : 
-                               (row.getViewType() == RowModel.TYPE_SUBHEADER ? subheaderBgColor : rowBgColor);
-            
-            showColorPickerDialog(title, defaultColor, color -> {
-                // If color is -1 (Clear), reset custom color
-                if (color == -1) {
-                    row.setCustomBgColor(0);
-                } else {
-                    row.setCustomBgColor(color);
-                }
-                adapter.notifyItemChanged(position);
-            });
+            showEditRowDialog(position, row);
         });
 
         // Typography seekbars
         seekbarFontSize.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                globalFontSize = Math.max(8, progress);
-                fontSizeLabel.setText((int) globalFontSize + "sp");
+                if (selectedColumnIndex != -1) {
+                    float newSize = Math.max(8f, progress);
+                    columns.get(selectedColumnIndex).setCustomFontSize(newSize);
+                    fontSizeLabel.setText((int) newSize + "sp");
+                } else {
+                    globalFontSize = Math.max(8f, progress);
+                    fontSizeLabel.setText((int) globalFontSize + "sp");
+                }
                 adapter.setFontSize(globalFontSize);
+                adapter.setColumns(columns);
                 adapter.notifyDataSetChanged();
                 rebuildHeaderRow();
             }
@@ -450,6 +445,120 @@ public class RateListFragment extends Fragment {
         }, getViewLifecycleOwner(), Lifecycle.State.RESUMED);
     }
 
+    private void showEditRowDialog(int position, RowModel row) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
+        boolean isSubheader = (row.getViewType() == RowModel.TYPE_SUBHEADER);
+        builder.setTitle(isSubheader ? "Edit Category" : "Edit Row");
+
+        ScrollView scrollView = new ScrollView(requireContext());
+        LinearLayout dialogLayout = new LinearLayout(requireContext());
+        dialogLayout.setOrientation(LinearLayout.VERTICAL);
+        dialogLayout.setPadding(dp(24), dp(16), dp(24), dp(8));
+
+        List<TextInputEditText> inputFields = new ArrayList<>();
+
+        if (isSubheader) {
+            TextInputLayout til = new TextInputLayout(requireContext(), null,
+                    com.google.android.material.R.attr.textInputOutlinedStyle);
+            til.setHint("Category Name");
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            lp.topMargin = dp(8);
+            til.setLayoutParams(lp);
+
+            TextInputEditText et = new TextInputEditText(til.getContext());
+            et.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
+            et.setText(row.getSubheaderText());
+            til.addView(et);
+            dialogLayout.addView(til);
+            inputFields.add(et);
+        } else {
+            List<String> values = row.getCellValues();
+            for (int i = 0; i < columns.size(); i++) {
+                ColumnConfig col = columns.get(i);
+                // Skip entry for Auto Sr. No
+                if (autoSrNo && i == 0 && "Sr. No".equals(col.getName())) {
+                    continue;
+                }
+
+                TextInputLayout til = new TextInputLayout(requireContext(), null,
+                        com.google.android.material.R.attr.textInputOutlinedStyle);
+                til.setHint(col.getName());
+                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                lp.topMargin = dp(8);
+                til.setLayoutParams(lp);
+
+                TextInputEditText et = new TextInputEditText(til.getContext());
+                et.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
+                
+                String existingVal = "";
+                if (i < values.size()) {
+                    existingVal = values.get(i);
+                }
+                et.setText(existingVal);
+                
+                til.addView(et);
+                dialogLayout.addView(til);
+                inputFields.add(et);
+            }
+        }
+
+        scrollView.addView(dialogLayout);
+        builder.setView(scrollView);
+
+        builder.setPositiveButton("Save", (dialog, which) -> {
+            if (isSubheader) {
+                String text = (inputFields.get(0).getText() != null) ? inputFields.get(0).getText().toString().trim() : "";
+                row.setSubheaderText(text);
+            } else {
+                List<String> newValues = new ArrayList<>();
+                int inputIdx = 0;
+                for (int i = 0; i < columns.size(); i++) {
+                    if (autoSrNo && i == 0 && "Sr. No".equals(columns.get(i).getName())) {
+                        newValues.add(""); // Placeholder
+                    } else if (inputIdx < inputFields.size()) {
+                        TextInputEditText et = inputFields.get(inputIdx++);
+                        String val = (et.getText() != null) ? et.getText().toString().trim() : "";
+                        newValues.add(val);
+                    }
+                }
+                row.getCellValues().clear();
+                row.getCellValues().addAll(newValues);
+            }
+            adapter.notifyItemChanged(position);
+            
+            // Rebuild rows if row impacts something globally, though usually not.
+            if(autoSrNo && !isSubheader) adapter.notifyDataSetChanged(); // Sr numbers might shift if positions change but editing doesn't change position.
+        });
+
+        builder.setNeutralButton("Remove", (dialog, which) -> {
+            adapter.getRows().remove(position);
+            adapter.notifyItemRemoved(position);
+            
+            if (adapter.getRows().isEmpty()) {
+                emptyMessage.setVisibility(View.VISIBLE);
+            }
+            
+            if (autoSrNo) adapter.notifyDataSetChanged(); // update Sr No counts
+            
+            Snackbar snackbar = Snackbar.make(requireView(), "Row Removed", Snackbar.LENGTH_LONG);
+            snackbar.setAction("UNDO", v -> {
+                adapter.getRows().add(position, row);
+                adapter.notifyItemInserted(position);
+                emptyMessage.setVisibility(View.GONE);
+                if (autoSrNo) adapter.notifyDataSetChanged();
+                rateListRecycler.scrollToPosition(position);
+            });
+            snackbar.show();
+        });
+
+        builder.setNegativeButton("Cancel", null);
+        AlertDialog dialog = builder.create();
+        dialog.setCanceledOnTouchOutside(false);
+        dialog.show();
+    }
+
     private interface OnColorSelectedListener {
         void onColorSelected(int color);
     }
@@ -516,12 +625,10 @@ public class RateListFragment extends Fragment {
         // Container for column name fields
         LinearLayout fieldsContainer = new LinearLayout(requireContext());
         fieldsContainer.setOrientation(LinearLayout.VERTICAL);
+        dialogLayout.addView(fieldsContainer);
 
         ScrollView scrollView = new ScrollView(requireContext());
-        scrollView.setLayoutParams(new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(300)));
-        scrollView.addView(fieldsContainer);
-        dialogLayout.addView(scrollView);
+        scrollView.addView(dialogLayout);
 
         // Populate fields for current count
         Runnable populateFields = () -> {
@@ -558,7 +665,7 @@ public class RateListFragment extends Fragment {
             @Override public void onStopTrackingTouch(SeekBar seekBar) {}
         });
 
-        builder.setView(dialogLayout);
+        builder.setView(scrollView);
         builder.setPositiveButton("Apply", (dialog, which) -> {
             int count = countSeek.getProgress();
             List<ColumnConfig> newColumns = new ArrayList<>();
@@ -612,7 +719,8 @@ public class RateListFragment extends Fragment {
                     dp(col.getWidth()), ViewGroup.LayoutParams.WRAP_CONTENT);
             tv.setLayoutParams(lp);
             tv.setText(col.getName());
-            tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, globalFontSize);
+            float headerFontSize = (col.getCustomFontSize() != -1f) ? col.getCustomFontSize() : globalFontSize;
+            tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, headerFontSize);
             tv.setTypeface(null, Typeface.BOLD);
             tv.setTextColor(fontColor);
             tv.setPadding(dp(4), dp(8), dp(4), dp(8));
@@ -631,11 +739,16 @@ public class RateListFragment extends Fragment {
                     selectedColumnIndex = -1;
                     seekbarColumnWidth.setEnabled(false);
                     columnWidthLabel.setText("-");
+                    seekbarFontSize.setProgress((int) globalFontSize);
+                    fontSizeLabel.setText((int) globalFontSize + "sp");
                 } else {
                     selectedColumnIndex = index;
                     seekbarColumnWidth.setEnabled(true);
                     seekbarColumnWidth.setProgress(col.getWidth());
                     columnWidthLabel.setText(String.valueOf(col.getWidth()));
+                    float currentFs = (col.getCustomFontSize() != -1f) ? col.getCustomFontSize() : globalFontSize;
+                    seekbarFontSize.setProgress((int) currentFs);
+                    fontSizeLabel.setText((int) currentFs + "sp");
                 }
                 rebuildHeaderRow(); // Re-render highlights
             });
@@ -651,6 +764,7 @@ public class RateListFragment extends Fragment {
         AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
         builder.setTitle("Add Product");
 
+        ScrollView scrollView = new ScrollView(requireContext());
         LinearLayout dialogLayout = new LinearLayout(requireContext());
         dialogLayout.setOrientation(LinearLayout.VERTICAL);
         dialogLayout.setPadding(dp(24), dp(16), dp(24), dp(8));
@@ -679,7 +793,8 @@ public class RateListFragment extends Fragment {
             inputFields.add(et);
         }
 
-        builder.setView(dialogLayout);
+        scrollView.addView(dialogLayout);
+        builder.setView(scrollView);
         builder.setPositiveButton("Add", (dialog, which) -> {
             List<String> values = new ArrayList<>();
             int inputIdx = 0;
@@ -897,7 +1012,11 @@ public class RateListFragment extends Fragment {
 
         executorService.execute(() -> {
             try {
-                int pageWidth = 595;
+                int neededWidth = 2 * 40;
+                for (ColumnConfig c : colSnapshot) {
+                    neededWidth += c.getWidth();
+                }
+                int pageWidth = Math.max(595, neededWidth);
                 int pageHeight = 842;
 
                 PdfDocument pdfDocument = new PdfDocument();
@@ -1040,6 +1159,8 @@ public class RateListFragment extends Fragment {
                     } else if (i < vals.size()) {
                         cellText = vals.get(i);
                     }
+                    float cellFs = (col.getCustomFontSize() != -1f) ? col.getCustomFontSize() : textSize;
+                    paint.setTextSize(cellFs);
                     
                     canvas.drawText(cellText, currentX, y, paint);
                     currentX += col.getWidth();
@@ -1079,11 +1200,12 @@ public class RateListFragment extends Fragment {
 
         // Header text
         paint.setColor(fontColor);
-        paint.setTextSize(textSize);
         paint.setFakeBoldText(true);
         float currentX = margin + 8;
         for (int i = 0; i < cols.size(); i++) {
             ColumnConfig col = cols.get(i);
+            float headerFs = (col.getCustomFontSize() != -1f) ? col.getCustomFontSize() : textSize;
+            paint.setTextSize(headerFs);
             canvas.drawText(col.getName(), currentX, currentY + headerHeight - 8, paint);
             currentX += col.getWidth();
         }

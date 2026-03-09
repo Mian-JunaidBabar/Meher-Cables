@@ -173,7 +173,9 @@ public class RateListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                     dpToPx(cell, col.getWidth()), ViewGroup.LayoutParams.WRAP_CONTENT);
             cell.setLayoutParams(lp);
-            cell.setTextSize(TypedValue.COMPLEX_UNIT_SP, fontSize);
+            
+            float cellFontSize = (col.getCustomFontSize() != -1f) ? col.getCustomFontSize() : fontSize;
+            cell.setTextSize(TypedValue.COMPLEX_UNIT_SP, cellFontSize);
             cell.setTextColor(fontColor);
 
             // First column left-aligned, rest right-aligned

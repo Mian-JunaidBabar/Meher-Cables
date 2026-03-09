@@ -61,4 +61,12 @@ public class RowModel {
     public void setCustomBgColor(int customBgColor) {
         this.customBgColor = customBgColor;
     }
+
+    public void setSubheaderText(String subheaderText) {
+        this.subheaderText = subheaderText;
+    }
+
+    public void setCellValues(List<String> cellValues) {
+        this.cellValues = cellValues;
+    }
 }
