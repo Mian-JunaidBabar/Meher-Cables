@@ -20,13 +20,18 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.slider.Slider;
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.List;
 import java.util.Locale;
 
 public class LabelMakerFragment extends Fragment {
@@ -42,12 +47,15 @@ public class LabelMakerFragment extends Fragment {
     private EditText textInput, rowsInput, columnsInput;
     private MaterialButton exportButton, textColorButton;
     private MaterialButton presetWhiteBtn, presetGrayBtn, presetBlackBtn;
+    private MaterialButton btnSavePreset, btnLoadPreset;
     private Slider fontSizeSlider;
     private TextView fontSizeValue;
 
     private int textColor = Color.BLACK;
     private int backgroundColor = Color.WHITE;
     private float fontSize = 12f;
+
+    private PresetManager presetManager;
 
     private ActivityResultLauncher<Intent> createPngLauncher;
     private ActivityResultLauncher<Intent> createPdfLauncher;
@@ -56,6 +64,8 @@ public class LabelMakerFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_label_maker, container, false);
+
+        presetManager = new PresetManager(requireContext(), "LabelMakerPresets");
 
         initializeViews(view);
         loadConfiguration();
@@ -108,6 +118,9 @@ public class LabelMakerFragment extends Fragment {
         presetWhiteBtn = view.findViewById(R.id.preset_white);
         presetGrayBtn = view.findViewById(R.id.preset_gray);
         presetBlackBtn = view.findViewById(R.id.preset_black);
+        
+        btnSavePreset = view.findViewById(R.id.btn_save_preset);
+        btnLoadPreset = view.findViewById(R.id.btn_load_preset);
 
         // Wire export PNG button
         if (exportPngBtn != null) {
@@ -163,6 +176,10 @@ public class LabelMakerFragment extends Fragment {
             backgroundColor = Color.BLACK;
             updatePreview();
         });
+
+        // Preset buttons
+        btnSavePreset.setOnClickListener(v -> showSavePresetDialog());
+        btnLoadPreset.setOnClickListener(v -> showLoadPresetDialog());
 
         // Export button
         exportButton.setOnClickListener(v -> exportToPdf());
@@ -247,6 +264,97 @@ public class LabelMakerFragment extends Fragment {
 
         // No more gradient UI states to restore
     }
+
+    // ==================== PRESET MANAGEMENT ====================
+
+    private static class LabelPresetState {
+        String text;
+        int rows;
+        int cols;
+        float fontSize;
+        int textColor;
+        int backgroundColor;
+    }
+
+    private void showSavePresetDialog() {
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext());
+        builder.setTitle("Save Preset");
+
+        TextInputLayout til = new TextInputLayout(requireContext(), null,
+                com.google.android.material.R.attr.textInputOutlinedStyle);
+        til.setHint("Preset Name");
+        int padding = (int) (24 * getResources().getDisplayMetrics().density);
+        til.setPadding(padding, padding / 2, padding, padding / 2);
+
+        TextInputEditText et = new TextInputEditText(til.getContext());
+        til.addView(et);
+        builder.setView(til);
+
+        builder.setPositiveButton("Save", (dialog, which) -> {
+            String name = (et.getText() != null) ? et.getText().toString().trim() : "";
+            if (name.isEmpty()) {
+                Toast.makeText(requireContext(), "Preset name cannot be empty", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            LabelPresetState state = new LabelPresetState();
+            state.text = textInput.getText().toString();
+            state.rows = parseIntOrDefault(rowsInput.getText().toString(), 10);
+            state.cols = parseIntOrDefault(columnsInput.getText().toString(), 3);
+            state.fontSize = fontSizeSlider.getValue();
+            state.textColor = textColor;
+            state.backgroundColor = backgroundColor;
+
+            presetManager.savePreset(name, state);
+            Toast.makeText(requireContext(), "Preset '" + name + "' saved!", Toast.LENGTH_SHORT).show();
+        });
+        builder.setNegativeButton("Cancel", null);
+        AlertDialog dialog = builder.create();
+        dialog.setCanceledOnTouchOutside(false);
+        dialog.show();
+    }
+
+    private void showLoadPresetDialog() {
+        List<String> presets = presetManager.getAllPresetNames();
+        if (presets.isEmpty()) {
+            Toast.makeText(requireContext(), "No saved presets found.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String[] presetArray = presets.toArray(new String[0]);
+
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Load Preset")
+                .setItems(presetArray, (dialog, which) -> {
+                    String selectedPreset = presetArray[which];
+                    LabelPresetState state = presetManager.loadPreset(selectedPreset, LabelPresetState.class);
+                    if (state != null) {
+                        applyPresetState(state);
+                        Toast.makeText(requireContext(), "Loaded preset: " + selectedPreset, Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(requireContext(), "Error loading preset", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void applyPresetState(LabelPresetState state) {
+        textInput.setText(state.text);
+        rowsInput.setText(String.valueOf(state.rows));
+        columnsInput.setText(String.valueOf(state.cols));
+        
+        // Boundaries checks
+        float fs = Math.max(fontSizeSlider.getValueFrom(), Math.min(fontSizeSlider.getValueTo(), state.fontSize));
+        fontSizeSlider.setValue(fs);
+        
+        textColor = state.textColor;
+        backgroundColor = state.backgroundColor;
+        
+        updateButtonColor(textColorButton, textColor);
+        updatePreview();
+    }
+
 
     private void exportToPdf() {
         // Validate inputs before export

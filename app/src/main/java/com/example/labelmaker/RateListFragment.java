@@ -34,6 +34,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
@@ -53,6 +54,7 @@ public class RateListFragment extends Fragment {
     private RecyclerView rateListRecycler;
     private LinearLayout rateListContainer;
     private MaterialButton btnExportPdf, btnExportPng;
+    private MaterialButton btnSavePreset, btnLoadPreset;
     private ExtendedFloatingActionButton fabAddItem;
     private SeekBar seekbarFontSize, seekbarRowPadding;
     private TextView fontSizeLabel, rowPaddingLabel;
@@ -64,6 +66,8 @@ public class RateListFragment extends Fragment {
     // Typography
     private float globalFontSize = 14f;
     private int globalRowPadding = 12;
+
+    private PresetManager presetManager;
 
     // Background execution
     private ExecutorService executorService;
@@ -82,6 +86,7 @@ public class RateListFragment extends Fragment {
 
         executorService = Executors.newSingleThreadExecutor();
         mainThreadHandler = new Handler(Looper.getMainLooper());
+        presetManager = new PresetManager(requireContext(), "RateListPresets");
 
         registerResultLaunchers();
         initializeViews(view);
@@ -124,6 +129,8 @@ public class RateListFragment extends Fragment {
         rateListContainer = view.findViewById(R.id.rate_list_container);
         btnExportPdf = view.findViewById(R.id.btn_export_pdf);
         btnExportPng = view.findViewById(R.id.btn_export_png);
+        btnSavePreset = view.findViewById(R.id.btn_save_preset);
+        btnLoadPreset = view.findViewById(R.id.btn_load_preset);
         fabAddItem = view.findViewById(R.id.fab_add_item);
         seekbarFontSize = view.findViewById(R.id.seekbar_font_size);
         seekbarRowPadding = view.findViewById(R.id.seekbar_row_padding);
@@ -185,6 +192,8 @@ public class RateListFragment extends Fragment {
 
         btnExportPdf.setOnClickListener(v -> exportPdf());
         btnExportPng.setOnClickListener(v -> exportPng());
+        btnSavePreset.setOnClickListener(v -> showSavePresetDialog());
+        btnLoadPreset.setOnClickListener(v -> showLoadPresetDialog());
 
         // Typography seekbars
         seekbarFontSize.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -410,6 +419,105 @@ public class RateListFragment extends Fragment {
         AlertDialog dialog = builder.create();
         dialog.setCanceledOnTouchOutside(false);
         dialog.show();
+    }
+
+    // ==================== PRESET MANAGEMENT ====================
+
+    private static class RateListPresetState {
+        List<ColumnConfig> columns;
+        List<RowModel> rows;
+        float fontSize;
+        int rowPadding;
+    }
+
+    private void showSavePresetDialog() {
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext());
+        builder.setTitle("Save Preset");
+
+        TextInputLayout til = new TextInputLayout(requireContext(), null,
+                com.google.android.material.R.attr.textInputOutlinedStyle);
+        til.setHint("Preset Name");
+        int padding = (int) (24 * getResources().getDisplayMetrics().density);
+        til.setPadding(padding, padding / 2, padding, padding / 2);
+
+        TextInputEditText et = new TextInputEditText(til.getContext());
+        til.addView(et);
+        builder.setView(til);
+
+        builder.setPositiveButton("Save", (dialog, which) -> {
+            String name = (et.getText() != null) ? et.getText().toString().trim() : "";
+            if (name.isEmpty()) {
+                Toast.makeText(requireContext(), "Preset name cannot be empty", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            RateListPresetState state = new RateListPresetState();
+            state.columns = new ArrayList<>(columns);
+            state.rows = new ArrayList<>(adapter.getRows());
+            state.fontSize = globalFontSize;
+            state.rowPadding = globalRowPadding;
+
+            presetManager.savePreset(name, state);
+            Toast.makeText(requireContext(), "Preset '" + name + "' saved!", Toast.LENGTH_SHORT).show();
+        });
+        builder.setNegativeButton("Cancel", null);
+        AlertDialog dialog = builder.create();
+        dialog.setCanceledOnTouchOutside(false);
+        dialog.show();
+    }
+
+    private void showLoadPresetDialog() {
+        List<String> presets = presetManager.getAllPresetNames();
+        if (presets.isEmpty()) {
+            Toast.makeText(requireContext(), "No saved presets found.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String[] presetArray = presets.toArray(new String[0]);
+
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Load Preset")
+                .setItems(presetArray, (dialog, which) -> {
+                    String selectedPreset = presetArray[which];
+                    RateListPresetState state = presetManager.loadPreset(selectedPreset, RateListPresetState.class);
+                    if (state != null) {
+                        applyPresetState(state);
+                        Toast.makeText(requireContext(), "Loaded preset: " + selectedPreset, Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(requireContext(), "Error loading preset", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void applyPresetState(RateListPresetState state) {
+        if (state.columns != null && !state.columns.isEmpty()) {
+            this.columns = state.columns;
+            adapter.setColumns(this.columns);
+            rebuildHeaderRow();
+        }
+
+        if (state.rows != null) {
+            adapter.clearRows();
+            for (RowModel row : state.rows) {
+                adapter.addRow(row);
+            }
+        }
+
+        if (state.fontSize >= 8 && state.fontSize <= 28) {
+            globalFontSize = state.fontSize;
+            seekbarFontSize.setProgress((int) globalFontSize);
+        }
+
+        if (state.rowPadding >= 4 && state.rowPadding <= 32) {
+            globalRowPadding = state.rowPadding;
+            seekbarRowPadding.setProgress(globalRowPadding);
+        }
+
+        emptyMessage.setVisibility(adapter.getItemCount() > 0 ? View.GONE : View.VISIBLE);
+        adapter.notifyDataSetChanged();
+        savePreferences();
     }
 
     // ==================== EXPORT ====================
