@@ -152,57 +152,51 @@
                             android:max="300"
                             android:enabled="false" />
 
-                        <!-- Table Colors -->
-                        <!-- Table Colors Row 1 -->
+                        <!-- Theme Selector -->
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:orientation="horizontal"
-                            android:layout_marginTop="8dp">
+                            android:gravity="center_vertical"
+                            android:layout_marginTop="12dp">
 
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btn_header_bg_color"
-                                android:layout_width="0dp"
+                            <TextView
+                                android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="Header"
-                                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                                android:layout_marginEnd="4dp"/>
+                                android:text="Theme"
+                                android:textAppearance="?attr/textAppearanceBodySmall"
+                                android:layout_marginEnd="16dp" />
 
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btn_row_bg_color"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="Row"
-                                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                                android:layout_marginStart="4dp"/>
-                        </LinearLayout>
+                            <ImageView
+                                android:id="@+id/theme_teal"
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
+                                android:layout_marginEnd="12dp"
+                                android:background="@drawable/circle_teal"
+                                android:contentDescription="Teal theme" />
 
-                        <!-- Table Colors Row 2 -->
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:layout_marginTop="4dp">
+                            <ImageView
+                                android:id="@+id/theme_blue"
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
+                                android:layout_marginEnd="12dp"
+                                android:background="@drawable/circle_blue"
+                                android:contentDescription="Blue theme" />
 
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btn_subheader_bg_color"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="Subheader"
-                                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                                android:layout_marginEnd="4dp"/>
+                            <ImageView
+                                android:id="@+id/theme_warm"
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
+                                android:layout_marginEnd="12dp"
+                                android:background="@drawable/circle_warm"
+                                android:contentDescription="Warm theme" />
 
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btn_font_color"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="Font"
-                                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                                android:layout_marginStart="4dp"/>
+                            <ImageView
+                                android:id="@+id/theme_gray"
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
+                                android:background="@drawable/circle_gray"
+                                android:contentDescription="Gray theme" />
 
                         </LinearLayout>
 
@@ -246,7 +240,7 @@
                 android:id="@+id/preview_card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="80dp"
+                android:layout_marginBottom="12dp"
                 app:cardElevation="2dp"
                 app:cardBackgroundColor="?attr/colorSurface"
                 app:strokeWidth="1dp"
@@ -358,17 +352,5 @@
 
     </androidx.core.widget.NestedScrollView>
 
-    <!-- FAB for adding items -->
-    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-        android:id="@+id/fab_add_item"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_margin="16dp"
-        app:icon="@drawable/ic_add"
-        android:text="Add Item"
-        android:textColor="?attr/colorOnPrimary"
-        app:iconTint="?attr/colorOnPrimary"
-        android:backgroundTint="?attr/colorPrimary" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

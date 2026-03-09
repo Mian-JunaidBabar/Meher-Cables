@@ -16,9 +16,13 @@ import android.text.InputType;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -29,7 +33,9 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.view.MenuProvider;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.Lifecycle;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -37,7 +43,6 @@ import com.google.android.material.button.MaterialButton;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
@@ -59,12 +64,22 @@ public class RateListFragment extends Fragment {
     private LinearLayout rateListContainer;
     private MaterialButton btnExportPdf, btnExportPng;
     private MaterialButton btnSaveCurrentPreset;
-    private MaterialButton btnHeaderBgColor, btnRowBgColor, btnFontColor, btnSubheaderBgColor;
     private ChipGroup chipGroupPresets;
-    private ExtendedFloatingActionButton fabAddItem;
     private SeekBar seekbarFontSize, seekbarRowPadding, seekbarColumnWidth;
     private TextView fontSizeLabel, rowPaddingLabel, columnWidthLabel, tvA4Warning;
     private int selectedColumnIndex = -1;
+
+    // Theme selector circles
+    private ImageView themeTeal, themeBlue, themeWarm, themeGray;
+    private int selectedThemeIndex = 0;
+
+    // Theme palettes: [headerBg, rowBg, subheaderBg, fontColor]
+    private static final int[][] THEME_PALETTES = {
+        { Color.parseColor("#E0F2F1"), Color.parseColor("#F5F8F8"), Color.parseColor("#B2DFDB"), Color.BLACK },         // Teal
+        { Color.parseColor("#BBDEFB"), Color.parseColor("#E3F2FD"), Color.parseColor("#90CAF9"), Color.parseColor("#0D47A1") }, // Blue
+        { Color.parseColor("#FFCCBC"), Color.parseColor("#FFF3E0"), Color.parseColor("#FFAB91"), Color.parseColor("#BF360C") }, // Warm
+        { Color.parseColor("#E0E0E0"), Color.parseColor("#F5F5F5"), Color.parseColor("#BDBDBD"), Color.BLACK }          // Gray
+    };
 
     // Data
     private RateListAdapter adapter;
@@ -105,6 +120,8 @@ public class RateListFragment extends Fragment {
         setupDefaultColumns();
         setupRecyclerView();
         setupListeners();
+        setupThemeSelector();
+        setupToolbarMenu();
         loadPresetChips();
         rebuildHeaderRow();
 
@@ -142,12 +159,7 @@ public class RateListFragment extends Fragment {
         btnExportPdf = view.findViewById(R.id.btn_export_pdf);
         btnExportPng = view.findViewById(R.id.btn_export_png);
         btnSaveCurrentPreset = view.findViewById(R.id.btn_save_current_preset);
-        btnHeaderBgColor = view.findViewById(R.id.btn_header_bg_color);
-        btnRowBgColor = view.findViewById(R.id.btn_row_bg_color);
-        btnFontColor = view.findViewById(R.id.btn_font_color);
-        btnSubheaderBgColor = view.findViewById(R.id.btn_subheader_bg_color);
         chipGroupPresets = view.findViewById(R.id.chip_group_presets);
-        fabAddItem = view.findViewById(R.id.fab_add_item);
         seekbarFontSize = view.findViewById(R.id.seekbar_font_size);
         seekbarRowPadding = view.findViewById(R.id.seekbar_row_padding);
         seekbarColumnWidth = view.findViewById(R.id.seekbar_column_width);
@@ -155,6 +167,10 @@ public class RateListFragment extends Fragment {
         rowPaddingLabel = view.findViewById(R.id.row_padding_label);
         columnWidthLabel = view.findViewById(R.id.column_width_label);
         tvA4Warning = view.findViewById(R.id.tv_a4_warning);
+        themeTeal = view.findViewById(R.id.theme_teal);
+        themeBlue = view.findViewById(R.id.theme_blue);
+        themeWarm = view.findViewById(R.id.theme_warm);
+        themeGray = view.findViewById(R.id.theme_gray);
     }
 
     private void loadPreferences() {
@@ -180,6 +196,7 @@ public class RateListFragment extends Fragment {
         editor.putInt("rowBgColor", rowBgColor);
         editor.putInt("subheaderBgColor", subheaderBgColor);
         editor.putInt("fontColor", fontColor);
+        editor.putInt("themeIndex", selectedThemeIndex);
         editor.apply();
     }
 
@@ -230,51 +247,9 @@ public class RateListFragment extends Fragment {
     private void setupListeners() {
         btnSetupColumns.setOnClickListener(v -> showColumnSetupDialog());
 
-        fabAddItem.setOnClickListener(v -> {
-            // Show a choice dialog: Add Product or Add Subheader
-            new AlertDialog.Builder(requireContext())
-                    .setTitle("Add Row")
-                    .setItems(new String[]{"Add Product", "Add Category Header"}, (dialog, which) -> {
-                        if (which == 0) {
-                            showAddProductDialog();
-                        } else {
-                            showAddSubheaderDialog();
-                        }
-                    })
-                    .show();
-        });
-
         btnExportPdf.setOnClickListener(v -> exportPdf());
         btnExportPng.setOnClickListener(v -> exportPng());
         btnSaveCurrentPreset.setOnClickListener(v -> showSavePresetDialog());
-
-        btnHeaderBgColor.setOnClickListener(v -> showColorPickerDialog("Header Background Color", headerBgColor, color -> {
-            headerBgColor = color;
-            headerRow.setBackgroundColor(headerBgColor);
-            savePreferences();
-        }));
-
-        btnRowBgColor.setOnClickListener(v -> showColorPickerDialog("Row Background Color", rowBgColor, color -> {
-            rowBgColor = color;
-            adapter.setRowBgColor(rowBgColor);
-            adapter.notifyDataSetChanged();
-            savePreferences();
-        }));
-
-        btnFontColor.setOnClickListener(v -> showColorPickerDialog("Font Color", fontColor, color -> {
-            fontColor = color;
-            adapter.setFontColor(fontColor);
-            adapter.notifyDataSetChanged();
-            rebuildHeaderRow(); // Also update header row font coloring
-            savePreferences();
-        }));
-
-        btnSubheaderBgColor.setOnClickListener(v -> showColorPickerDialog("Subheader Background", subheaderBgColor, color -> {
-            subheaderBgColor = color;
-            adapter.setSubheaderBgColor(subheaderBgColor);
-            adapter.notifyDataSetChanged();
-            savePreferences();
-        }));
 
         adapter.setOnRowClickListener((position, row) -> {
             String title = row.getViewType() == RowModel.TYPE_SUBHEADER ? "Category Background" : "Row Background";
@@ -340,6 +315,86 @@ public class RateListFragment extends Fragment {
             @Override public void onStartTrackingTouch(SeekBar seekBar) {}
             @Override public void onStopTrackingTouch(SeekBar seekBar) {}
         });
+    }
+
+    private void setupThemeSelector() {
+        // Load saved theme index
+        SharedPreferences prefs = requireContext().getSharedPreferences(PREFS_NAME, requireContext().MODE_PRIVATE);
+        selectedThemeIndex = prefs.getInt("themeIndex", 0);
+        applyTheme(selectedThemeIndex);
+        highlightThemeCircle(selectedThemeIndex);
+
+        View.OnClickListener themeClickListener = v -> {
+            int index = 0;
+            int id = v.getId();
+            if (id == R.id.theme_teal) index = 0;
+            else if (id == R.id.theme_blue) index = 1;
+            else if (id == R.id.theme_warm) index = 2;
+            else if (id == R.id.theme_gray) index = 3;
+
+            selectedThemeIndex = index;
+            applyTheme(index);
+            highlightThemeCircle(index);
+            savePreferences();
+        };
+
+        themeTeal.setOnClickListener(themeClickListener);
+        themeBlue.setOnClickListener(themeClickListener);
+        themeWarm.setOnClickListener(themeClickListener);
+        themeGray.setOnClickListener(themeClickListener);
+    }
+
+    private void applyTheme(int index) {
+        int[] palette = THEME_PALETTES[index];
+        headerBgColor = palette[0];
+        rowBgColor = palette[1];
+        subheaderBgColor = palette[2];
+        fontColor = palette[3];
+
+        adapter.setRowBgColor(rowBgColor);
+        adapter.setSubheaderBgColor(subheaderBgColor);
+        adapter.setFontColor(fontColor);
+        adapter.notifyDataSetChanged();
+        rebuildHeaderRow();
+    }
+
+    private void highlightThemeCircle(int index) {
+        ImageView[] circles = { themeTeal, themeBlue, themeWarm, themeGray };
+        int[] backgrounds = { R.drawable.circle_teal, R.drawable.circle_blue, R.drawable.circle_warm, R.drawable.circle_gray };
+        for (int i = 0; i < circles.length; i++) {
+            if (i == index) {
+                circles[i].setForeground(getResources().getDrawable(R.drawable.circle_selected_ring, null));
+            } else {
+                circles[i].setForeground(null);
+            }
+        }
+    }
+
+    private void setupToolbarMenu() {
+        requireActivity().addMenuProvider(new MenuProvider() {
+            @Override
+            public void onCreateMenu(@NonNull Menu menu, @NonNull MenuInflater menuInflater) {
+                menuInflater.inflate(R.menu.menu_rate_list, menu);
+            }
+
+            @Override
+            public boolean onMenuItemSelected(@NonNull MenuItem menuItem) {
+                if (menuItem.getItemId() == R.id.action_add_item) {
+                    new AlertDialog.Builder(requireContext())
+                            .setTitle("Add Row")
+                            .setItems(new String[]{"Add Product", "Add Category Header"}, (dialog, which) -> {
+                                if (which == 0) {
+                                    showAddProductDialog();
+                                } else {
+                                    showAddSubheaderDialog();
+                                }
+                            })
+                            .show();
+                    return true;
+                }
+                return false;
+            }
+        }, getViewLifecycleOwner(), Lifecycle.State.RESUMED);
     }
 
     private interface OnColorSelectedListener {
