@@ -18,14 +18,14 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Cable Label Maker"
+        android:text="Meher Cables"
         android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
         android:textColor="?attr/colorOnPrimaryContainer" />
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Create professional cable labels"
+        android:text="Cable Labeling &amp; Rate Lists"
         android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
         android:textColor="?attr/colorOnPrimaryContainer"
         android:alpha="0.7"

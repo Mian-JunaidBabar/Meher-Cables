@@ -24,6 +24,7 @@ public class RateListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     private int rowBgColor = Color.parseColor("#F5F8F8"); // default alternating color
     private int subheaderBgColor = Color.parseColor("#E0F2F1");
     private int fontColor = Color.BLACK; // default text color
+    private boolean autoSrNo = false;
 
     public interface OnRowClickListener {
         void onRowClicked(int position, RowModel row);
@@ -58,6 +59,10 @@ public class RateListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
 
     public void setOnRowClickListener(OnRowClickListener listener) {
         this.rowClickListener = listener;
+    }
+
+    public void setAutoSrNo(boolean autoSrNo) {
+        this.autoSrNo = autoSrNo;
     }
 
     public void addRow(RowModel row) {
@@ -181,7 +186,16 @@ public class RateListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
             }
 
             // Populate with data or empty string
-            if (i < values.size()) {
+            if (autoSrNo && i == 0 && col.getName().equals("Sr. No")) {
+                // Auto serial number: count product rows before this position
+                int srNo = 0;
+                for (int r = 0; r <= position; r++) {
+                    if (rows.get(r).getViewType() == RowModel.TYPE_PRODUCT) {
+                        srNo++;
+                    }
+                }
+                cell.setText(String.valueOf(srNo));
+            } else if (i < values.size()) {
                 cell.setText(values.get(i));
             } else {
                 cell.setText("");

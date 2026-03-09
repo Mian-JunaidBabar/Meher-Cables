@@ -200,6 +200,15 @@
 
                         </LinearLayout>
 
+                        <!-- Auto Sr. No Toggle -->
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/switch_auto_sr_no"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Auto Sr. No"
+                            android:layout_marginTop="8dp"
+                            android:textAppearance="?attr/textAppearanceBodySmall" />
+
                     </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -254,6 +263,21 @@
                     android:orientation="vertical"
                     android:background="@color/white">
 
+                    <!-- Global Title -->
+                    <EditText
+                        android:id="@+id/et_rate_list_title"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Meher Cables Rate List"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textAlignment="center"
+                        android:gravity="center"
+                        android:padding="12dp"
+                        android:background="@android:color/transparent"
+                        android:inputType="text"
+                        android:maxLines="1"
+                        android:importantForAutofill="no" />
                     <TextView
                         android:id="@+id/tv_a4_warning"
                         android:layout_width="match_parent"

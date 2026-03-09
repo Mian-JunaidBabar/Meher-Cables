@@ -54,6 +54,10 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import android.widget.EditText;
+import android.widget.ScrollView;
+import com.google.android.material.switchmaterial.SwitchMaterial;
+
 public class RateListFragment extends Fragment {
 
     // UI Components
@@ -67,6 +71,9 @@ public class RateListFragment extends Fragment {
     private ChipGroup chipGroupPresets;
     private SeekBar seekbarFontSize, seekbarRowPadding, seekbarColumnWidth;
     private TextView fontSizeLabel, rowPaddingLabel, columnWidthLabel, tvA4Warning;
+    private EditText etRateListTitle;
+    private SwitchMaterial switchAutoSrNo;
+    private boolean autoSrNo = false;
     private int selectedColumnIndex = -1;
 
     // Theme selector circles
@@ -171,6 +178,8 @@ public class RateListFragment extends Fragment {
         themeBlue = view.findViewById(R.id.theme_blue);
         themeWarm = view.findViewById(R.id.theme_warm);
         themeGray = view.findViewById(R.id.theme_gray);
+        etRateListTitle = view.findViewById(R.id.et_rate_list_title);
+        switchAutoSrNo = view.findViewById(R.id.switch_auto_sr_no);
     }
 
     private void loadPreferences() {
@@ -181,6 +190,11 @@ public class RateListFragment extends Fragment {
         rowBgColor = prefs.getInt("rowBgColor", Color.parseColor("#F5F8F8"));
         subheaderBgColor = prefs.getInt("subheaderBgColor", Color.parseColor("#E0F2F1"));
         fontColor = prefs.getInt("fontColor", Color.BLACK);
+        autoSrNo = prefs.getBoolean("autoSrNo", false);
+
+        String savedTitle = prefs.getString("rateListTitle", "Meher Cables Rate List");
+        etRateListTitle.setText(savedTitle);
+        switchAutoSrNo.setChecked(autoSrNo);
 
         seekbarFontSize.setProgress((int) globalFontSize);
         seekbarRowPadding.setProgress(globalRowPadding);
@@ -197,14 +211,16 @@ public class RateListFragment extends Fragment {
         editor.putInt("subheaderBgColor", subheaderBgColor);
         editor.putInt("fontColor", fontColor);
         editor.putInt("themeIndex", selectedThemeIndex);
+        editor.putBoolean("autoSrNo", autoSrNo);
+        editor.putString("rateListTitle", etRateListTitle.getText().toString().trim());
         editor.apply();
     }
 
     private void setupDefaultColumns() {
         if (columns.isEmpty()) {
-            columns.add(new ColumnConfig("Sr.No", 50));
-            columns.add(new ColumnConfig("Description", 250));
-            columns.add(new ColumnConfig("Price", 100));
+            columns.add(new ColumnConfig("Cable Name", 200));
+            columns.add(new ColumnConfig("Old Rates", 150));
+            columns.add(new ColumnConfig("New Rates", 150));
         }
     }
 
@@ -216,6 +232,7 @@ public class RateListFragment extends Fragment {
         adapter.setRowBgColor(rowBgColor);
         adapter.setSubheaderBgColor(subheaderBgColor);
         adapter.setFontColor(fontColor);
+        adapter.setAutoSrNo(autoSrNo);
         rateListRecycler.setLayoutManager(new LinearLayoutManager(requireContext()));
         rateListRecycler.setAdapter(adapter);
 
@@ -250,6 +267,42 @@ public class RateListFragment extends Fragment {
         btnExportPdf.setOnClickListener(v -> exportPdf());
         btnExportPng.setOnClickListener(v -> exportPng());
         btnSaveCurrentPreset.setOnClickListener(v -> showSavePresetDialog());
+
+        switchAutoSrNo.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            autoSrNo = isChecked;
+            if (autoSrNo) {
+                // Ensure Sr. No is the first column
+                boolean hasSrNo = false;
+                if (!columns.isEmpty() && columns.get(0).getName().equals("Sr. No")) {
+                    hasSrNo = true;
+                }
+                if (!hasSrNo) {
+                    columns.add(0, new ColumnConfig("Sr. No", 50));
+                    // Shift existing row data to right
+                    for (RowModel row : adapter.getRows()) {
+                        if (row.getViewType() == RowModel.TYPE_PRODUCT) {
+                            row.getCellValues().add(0, "");
+                        }
+                    }
+                }
+            } else {
+                // Remove Sr. No if it's the first column
+                if (!columns.isEmpty() && columns.get(0).getName().equals("Sr. No")) {
+                    columns.remove(0);
+                    // Shift existing row data to left
+                    for (RowModel row : adapter.getRows()) {
+                        if (row.getViewType() == RowModel.TYPE_PRODUCT && !row.getCellValues().isEmpty()) {
+                            row.getCellValues().remove(0);
+                        }
+                    }
+                }
+            }
+            adapter.setAutoSrNo(autoSrNo);
+            adapter.setColumns(columns);
+            rebuildHeaderRow();
+            adapter.notifyDataSetChanged();
+            savePreferences();
+        });
 
         adapter.setOnRowClickListener((position, row) -> {
             String title = row.getViewType() == RowModel.TYPE_SUBHEADER ? "Category Background" : "Row Background";
@@ -463,7 +516,12 @@ public class RateListFragment extends Fragment {
         // Container for column name fields
         LinearLayout fieldsContainer = new LinearLayout(requireContext());
         fieldsContainer.setOrientation(LinearLayout.VERTICAL);
-        dialogLayout.addView(fieldsContainer);
+
+        ScrollView scrollView = new ScrollView(requireContext());
+        scrollView.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(300)));
+        scrollView.addView(fieldsContainer);
+        dialogLayout.addView(scrollView);
 
         // Populate fields for current count
         Runnable populateFields = () -> {
@@ -479,7 +537,7 @@ public class RateListFragment extends Fragment {
                 til.setLayoutParams(lp);
 
                 TextInputEditText et = new TextInputEditText(til.getContext());
-                et.setInputType(InputType.TYPE_CLASS_TEXT);
+                et.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
                 if (i < columns.size()) {
                     et.setText(columns.get(i).getName());
                 }
@@ -600,16 +658,22 @@ public class RateListFragment extends Fragment {
         List<TextInputEditText> inputFields = new ArrayList<>();
 
         for (int i = 0; i < columns.size(); i++) {
+            ColumnConfig col = columns.get(i);
+            // Skip entry for Auto Sr. No
+            if (autoSrNo && i == 0 && "Sr. No".equals(col.getName())) {
+                continue;
+            }
+
             TextInputLayout til = new TextInputLayout(requireContext(), null,
                     com.google.android.material.R.attr.textInputOutlinedStyle);
-            til.setHint(columns.get(i).getName());
+            til.setHint(col.getName());
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             lp.topMargin = dp(8);
             til.setLayoutParams(lp);
 
             TextInputEditText et = new TextInputEditText(til.getContext());
-            et.setInputType(InputType.TYPE_CLASS_TEXT);
+            et.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
             til.addView(et);
             dialogLayout.addView(til);
             inputFields.add(et);
@@ -618,9 +682,15 @@ public class RateListFragment extends Fragment {
         builder.setView(dialogLayout);
         builder.setPositiveButton("Add", (dialog, which) -> {
             List<String> values = new ArrayList<>();
-            for (TextInputEditText et : inputFields) {
-                String val = (et.getText() != null) ? et.getText().toString().trim() : "";
-                values.add(val);
+            int inputIdx = 0;
+            for (int i = 0; i < columns.size(); i++) {
+                if (autoSrNo && i == 0 && "Sr. No".equals(columns.get(i).getName())) {
+                    values.add(""); // Placeholder for auto-numbered cell
+                } else if (inputIdx < inputFields.size()) {
+                    TextInputEditText et = inputFields.get(inputIdx++);
+                    String val = (et.getText() != null) ? et.getText().toString().trim() : "";
+                    values.add(val);
+                }
             }
             adapter.addRow(RowModel.createProduct(values));
             emptyMessage.setVisibility(View.GONE);
@@ -952,9 +1022,25 @@ public class RateListFragment extends Fragment {
                 float currentX = margin + 8;
                 List<String> vals = row.getCellValues();
                 float y = currentY + rowHeight - 8;
+                
+                // Track serial number for PDF
+                int srNoCount = 0;
+                for (int j = 0; j <= r; j++) {
+                    if (rows.get(j).getViewType() == RowModel.TYPE_PRODUCT) {
+                        srNoCount++;
+                    }
+                }
+
                 for (int i = 0; i < cols.size(); i++) {
                     ColumnConfig col = cols.get(i);
-                    String cellText = (i < vals.size()) ? vals.get(i) : "";
+                    String cellText = "";
+                    
+                    if (autoSrNo && i == 0 && "Sr. No".equals(col.getName())) {
+                        cellText = String.valueOf(srNoCount);
+                    } else if (i < vals.size()) {
+                        cellText = vals.get(i);
+                    }
+                    
                     canvas.drawText(cellText, currentX, y, paint);
                     currentX += col.getWidth();
                 }
@@ -975,10 +1061,15 @@ public class RateListFragment extends Fragment {
 
     private int drawPdfHeader(Canvas canvas, Paint paint, int currentY, int margin, int pageWidth, List<ColumnConfig> cols, float textSize) {
         // Title
+        String title = etRateListTitle.getText().toString().trim();
+        if (title.isEmpty()) title = "Meher Cables Rate List";
         paint.setTextSize(24);
         paint.setColor(Color.BLACK);
         paint.setFakeBoldText(true);
-        canvas.drawText("Rate List", margin, currentY, paint);
+        // Center the title
+        float titleWidth = paint.measureText(title);
+        float titleX = (pageWidth - titleWidth) / 2f;
+        canvas.drawText(title, titleX, currentY, paint);
         currentY += 40;
 
         // Header row bg

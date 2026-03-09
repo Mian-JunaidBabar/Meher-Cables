@@ -67,7 +67,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     .replace(R.id.fragment_container, new LabelMakerFragment())
                     .commit();
             navigationView.setCheckedItem(R.id.nav_label_maker);
-            setTitle("Label Maker");
+            setTitle("Meher Cables");
         }
     }
     
@@ -104,7 +104,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             title = "Label Maker";
         } else if (itemId == R.id.nav_rate_list) {
             selectedFragment = new RateListFragment();
-            title = "Rate List Generator";
+            title = "Meher Cables";
         } else if (itemId == R.id.nav_theme_toggle) {
             // Handled by switch listener
             return false;
