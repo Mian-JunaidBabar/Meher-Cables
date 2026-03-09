@@ -6,6 +6,10 @@ on:
       - main
     tags:
       - "v*"
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
   build:
@@ -13,11 +17,12 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      packages: write
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -29,36 +34,40 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
-      - name: Build Debug APK
-        run: ./gradlew assembleDebug
+      - name: Build Debug and Release APKs
+        run: ./gradlew clean assembleDebug assembleRelease
 
-      - name: Upload APK Artifact
+      - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: PakLabel-Pro-Debug
           path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+      - name: Upload Release APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PakLabel-Pro-Release
+          path: app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
 
       - name: Github Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: app/build/outputs/apk/debug/app-debug.apk
+          files: |
+            app/build/outputs/apk/release/*.apk
+            app/build/outputs/apk/debug/app-debug.apk
           generate_release_notes: false
           body: |
-            ## 📱 LabelMaker APK Release
+            LabelMaker Android release artifacts by Meher Cables.
 
-            This release includes the latest build of the LabelMaker Android application.
+            Included files:
+            - app/build/outputs/apk/release/*.apk
+            - app-debug.apk
 
-            ### ✨ Features
-            - Material Design 3 UI
-            - A4 Cable Label Generator
-            - Rate List Generator
-            - PDF & PNG Export
-            - Full customization options
-
-            ### 📦 Artifacts
-            - `app-debug.apk` - Debug build ready for testing
-
-            To install: Transfer the APK to your Android device and open it, or use Android Studio to install the APK directly.
+            Notes:
+            - Release APK name may be signed or unsigned based on your signing setup.
+            - app-debug.apk is signed with debug keys for testing.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
